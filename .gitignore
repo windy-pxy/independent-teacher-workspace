@@ -1,0 +1,47 @@
+# Secrets (keep the documented template)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# JavaScript
+node_modules/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+
+# Runtime and private data
+var/
+uploads/
+exports/
+backups/
+logs/
+fixtures/private/
+*.sql
+*.dump
+*.sqlite
+*.sqlite3
+*.docx
+*.xlsx
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local tooling
+.pnpm-store/
+.uv-cache/

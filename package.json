@@ -1,0 +1,38 @@
+{
+  "name": "independent-teacher-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=11 <12"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n web,api,worker -c cyan,green,yellow \"pnpm dev:web\" \"pnpm dev:api\" \"pnpm dev:worker\"",
+    "dev:web": "pnpm --dir apps/web dev",
+    "dev:api": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync uvicorn teacher_workspace.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:worker": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.worker",
+    "lint": "pnpm lint:web && pnpm lint:backend",
+    "lint:web": "pnpm --dir apps/web lint",
+    "lint:backend": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync ruff check apps/backend",
+    "typecheck": "pnpm typecheck:web && pnpm typecheck:backend && pnpm typecheck:api-client",
+    "typecheck:web": "pnpm --dir apps/web typecheck",
+    "typecheck:backend": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync mypy apps/backend/src",
+    "typecheck:api-client": "pnpm --dir packages/api-client typecheck",
+    "test": "pnpm test:web && pnpm test:backend",
+    "test:web": "pnpm --dir apps/web test",
+    "test:backend": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync pytest apps/backend/tests",
+    "build": "pnpm build:web && pnpm build:backend",
+    "build:web": "pnpm --dir apps/web build",
+    "build:backend": "uv build --project apps/backend",
+    "db:migrate": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync alembic -c apps/backend/alembic.ini upgrade head",
+    "db:rollback": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync alembic -c apps/backend/alembic.ini downgrade -1",
+    "api:generate": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python scripts/export_openapi.py && openapi-typescript packages/api-client/openapi.json -o packages/api-client/src/schema.d.ts",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm api:generate && pnpm build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "openapi-typescript": "^7.10.1"
+  }
+}
