@@ -113,9 +113,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["actor_user_id"], ["users.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        "ix_audit_entity", "audit_logs", ["entity_type", "entity_id", "created_at"]
-    )
+    op.create_index("ix_audit_entity", "audit_logs", ["entity_type", "entity_id", "created_at"])
 
 
 def downgrade() -> None:

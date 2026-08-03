@@ -27,9 +27,7 @@ async def test_live_health() -> None:
 async def test_ready_health() -> None:
     app.dependency_overrides[database_readiness] = ready_database
     try:
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get("/health/ready")
     finally:
         app.dependency_overrides.clear()

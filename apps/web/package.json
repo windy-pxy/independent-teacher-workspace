@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@teacher-workspace/api-client": "workspace:*",
     "@tanstack/react-query": "^5.90.5",
     "next": "^16.0.0",
     "react": "^19.2.0",

@@ -20,3 +20,19 @@ body {
 }
 
 a { color: inherit; }
+
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+
+@layer components {
+  .card { @apply rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm; }
+  .button-primary { @apply inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50; }
+  .button-secondary { @apply inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm font-medium transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50; }
+  .button-danger { @apply inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100; }
+  .field { @apply w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200; }
+  .label { @apply mb-1 block text-sm font-medium; }
+  .nav-link { @apply whitespace-nowrap rounded-lg px-3 py-2 text-sm text-slate-600 transition hover:bg-white hover:text-slate-950; }
+  .nav-link-active { @apply bg-white font-medium text-slate-950 shadow-sm; }
+  .notice-error { @apply rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700; }
+  .badge { @apply inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700; }
+}

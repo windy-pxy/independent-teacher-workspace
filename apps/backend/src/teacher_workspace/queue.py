@@ -106,7 +106,7 @@ async def fail_job(
             raise LookupError(f"Unknown job {job_id}")
         terminal = job.attempts_count >= job.max_attempts
         job.status = AIJobStatus.FAILED if terminal else AIJobStatus.QUEUED
-        job.available_at = now_utc() + timedelta(seconds=2 ** job.attempts_count)
+        job.available_at = now_utc() + timedelta(seconds=2**job.attempts_count)
         job.error_code = error_code
         job.error_message = safe_message[:1000]
         job.leased_by = None

@@ -1,6 +1,6 @@
 # 数据库 ER 设计
 
-Phase 0 初始迁移只创建 `User`、`UserSession`、`AIJob`、`AIJobAttempt`、`AuditLog`。下图是后续阶段的目标模型，实施时按阶段补充迁移。
+Phase 0 初始迁移创建 `User`、`UserSession`、`AIJob`、`AIJobAttempt`、`AuditLog`。Phase 1 已新增 `Subject`、`Student`、`StudentSubject`、`TeachingPlan`、`TeachingPlanItem`、`TeachingPlanRevision`、`Lesson` 和 `LessonPlanItem`；图中其余实体仍按后续阶段补充迁移。
 
 ```mermaid
 erDiagram

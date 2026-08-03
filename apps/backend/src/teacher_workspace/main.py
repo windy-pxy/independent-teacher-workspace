@@ -10,9 +10,11 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 
 from teacher_workspace import __version__
+from teacher_workspace.auth import router as auth_router
 from teacher_workspace.config import get_settings
 from teacher_workspace.db import dispose_engine
 from teacher_workspace.health import router as health_router
+from teacher_workspace.phase1 import router as phase1_router
 
 
 @asynccontextmanager
@@ -37,6 +39,8 @@ app.add_middleware(
     allow_headers=["Content-Type", "X-CSRF-Token", "X-Request-ID"],
 )
 app.include_router(health_router)
+app.include_router(auth_router)
+app.include_router(phase1_router)
 
 
 @app.middleware("http")

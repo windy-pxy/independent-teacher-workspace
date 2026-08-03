@@ -1,10 +1,16 @@
 # 独立教师工作台
 
-仅供一名教师个人使用的课程与教学工作流系统。本仓库当前完成 **Phase 0：架构、工程骨架和可验证的基础服务**，尚未实现学生、课程、教案、反馈、错题和收费等业务界面。
+仅供一名教师个人使用的课程与教学工作流系统。本仓库当前完成 **Phase 1：学生、学科、教学计划、课程与基础仪表盘**。AI 教案、课后反馈闭环、错题和收费仍属于后续阶段。
 
 ## 当前能力
 
-- Next.js 16 健康状态页，通过同源代理访问 FastAPI。
+- 单教师账户登录、服务端会话、HttpOnly Cookie、CSRF/Origin 校验和所有权隔离。
+- 学生档案、学科和学生学科关联的创建、编辑与安全归档。
+- 长期教学计划、层级条目、结构化进度和不可变调整快照。
+- 单节课程创建、月历/列表、编辑、完成、取消、调课和补课关联。
+- 课程完成前由教师确认实际时长及需要推进的计划条目。
+- 今日/未来七天课程、计划进度、本周和本月课时的基础仪表盘。
+- Next.js 16 Web，通过同源代理访问 FastAPI；所有按钮均连接真实 API。
 - FastAPI `/health/live` 和 `/health/ready`，统一请求 ID 与错误结构。
 - PostgreSQL + SQLAlchemy 2 + Alembic 基础迁移。
 - PostgreSQL 队列 Worker，支持领取租约、心跳接口、有限重试及 Mock 任务。
@@ -92,7 +98,7 @@ pnpm db:migrate
 pnpm db:rollback
 ```
 
-创建唯一教师账户（Phase 1 才提供登录页面）：
+创建唯一教师账户：
 
 ```powershell
 cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.cli
@@ -141,8 +147,14 @@ cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync al
 - **Docker Hub 需要本机代理**：Docker CLI 使用 Windows 地址（如 `HTTP_PROXY=http://127.0.0.1:<端口>`）；构建容器通过 `.env` 中的 `DOCKER_BUILD_HTTP_PROXY=http://host.docker.internal:<端口>` 和对应 HTTPS 变量访问同一代理。不要把包含认证信息的代理 URL 提交到 Git。
 - **OpenAPI 类型变化**：运行 `pnpm api:generate` 并提交生成的 JSON 和 TypeScript 类型。
 
+## Phase 1 使用说明
+
+首次迁移后先创建教师账户，然后访问 <http://localhost:3000/login> 登录。推荐按“学科 → 学生 → 关联学生学科 → 教学计划 → 课程”的顺序录入。完成课程时，系统会弹出确认窗口；只有教师勾选并确认的计划条目才会改变正式进度。
+
+当前不支持重复课程规则。调课会保留原课程为“已调课”，并创建一节关联的新课程；取消后的课程可在新建课程时选为补课来源。
+
 ## 下一阶段
 
-Phase 1 将实现登录、学生与学科档案、长期计划、课程列表/日历和基础仪表盘。AI 教案和 Word 导出属于 Phase 2，不在当前版本中。
+Phase 2 将实现 AI 统一接口、集中提示词模板、教案草稿/审核/版本管理，以及 DOCX 示例和自动测试。Phase 1 不会调用付费模型，也没有提前实现错题、反馈闭环或收费模块。
 
 项目的提交和推送必须遵循 [AGENTS.md](AGENTS.md) 中的“双重确认”流程。
