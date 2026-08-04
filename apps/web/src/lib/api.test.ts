@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, api, jsonBody } from "./api";
+import { ApiError, api, apiBlob, jsonBody } from "./api";
 
 describe("API client", () => {
   afterEach(() => {
@@ -41,5 +41,26 @@ describe("API client", () => {
     await expect(api("/students/student-1")).rejects.toEqual(
       new ApiError("记录已被修改", 409, "VERSION_CONFLICT"),
     );
+  });
+
+  it("downloads approved Word documents with CSRF and the server filename", async () => {
+    document.cookie = "teacher_workspace_session_csrf=download-token; path=/";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({
+        "Content-Disposition":
+          "attachment; filename*=UTF-8''2026-08-10_%E7%A4%BA%E4%BE%8B%E5%AD%A6%E7%94%9F.docx",
+      }),
+      blob: async () => new Blob(["docx"]),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await apiBlob("/lesson-documents/example/export.docx", {
+      method: "POST",
+    });
+
+    expect(result.filename).toBe("2026-08-10_示例学生.docx");
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(new Headers(request.headers).get("X-CSRF-Token")).toBe("download-token");
   });
 });

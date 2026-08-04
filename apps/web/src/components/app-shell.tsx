@@ -14,6 +14,8 @@ const navigation = [
   ["/subjects", "学科"],
   ["/plans", "教学计划"],
   ["/lessons", "课程与课表"],
+  ["/lesson-plans", "AI 教案"],
+  ["/settings/ai", "模板与 AI"],
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {

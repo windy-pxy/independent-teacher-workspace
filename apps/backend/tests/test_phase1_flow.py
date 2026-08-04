@@ -11,6 +11,7 @@ from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.main import app
 from teacher_workspace.models import Base, TeachingPlanItem, User
+from teacher_workspace.worker import run_once
 
 
 @pytest.fixture
@@ -271,3 +272,120 @@ async def test_reschedule_preserves_original(phase1_context: tuple[AsyncClient, 
     statuses = {row["id"]: row["status"] for row in lessons}
     assert statuses[original["id"]] == "RESCHEDULED"
     assert statuses[replacement["id"]] == "PLANNED"
+
+
+@pytest.mark.asyncio
+async def test_mock_lesson_plan_review_and_docx_export(
+    phase1_context: tuple[AsyncClient, async_sessionmaker[AsyncSession]],
+) -> None:
+    client, factory = phase1_context
+    headers = await login(client)
+    subject = (
+        await client.post(
+            "/api/v1/subjects", json={"name": "虚构物理"}, headers=headers
+        )
+    ).json()
+    student = (
+        await client.post(
+            "/api/v1/students",
+            json={"display_name": "示例学生丙", "grade": "八年级"},
+            headers=headers,
+        )
+    ).json()
+    link = (
+        await client.post(
+            "/api/v1/student-subjects",
+            json={
+                "student_id": student["id"],
+                "subject_id": subject["id"],
+                "current_foundation": "能识别基本物理量",
+                "stage_goal": "掌握速度计算",
+            },
+            headers=headers,
+        )
+    ).json()
+    lesson = (
+        await client.post(
+            "/api/v1/lessons",
+            json={
+                "student_subject_id": link["id"],
+                "scheduled_start": (datetime.now(UTC) + timedelta(days=3)).isoformat(),
+                "planned_minutes": 90,
+                "lesson_type": "NEW_LESSON",
+                "theme": "速度与路程",
+            },
+            headers=headers,
+        )
+    ).json()
+
+    queued = await client.post(
+        f"/api/v1/lessons/{lesson['id']}/documents/generate",
+        json={"extra_requirements": "使用虚构题目，先讲单位换算"},
+        headers=headers,
+    )
+    assert queued.status_code == 202, queued.text
+    settings = Settings(
+        database_url="sqlite+aiosqlite:///:memory:",
+        session_secret="test-session-secret-that-is-long-enough",
+        trusted_origins=["http://test"],
+        ai_provider="mock",
+        worker_id="phase2-test-worker",
+    )
+    assert await run_once(factory, settings)
+    job = await client.get(f"/api/v1/ai-jobs/{queued.json()['id']}")
+    assert job.json()["status"] == "SUCCEEDED"
+    document_response = await client.get(
+        f"/api/v1/lessons/{lesson['id']}/document"
+    )
+    assert document_response.status_code == 200, document_response.text
+    document = document_response.json()
+    content = document["current_version"]["content"]
+    assert sum(block["minutes"] for block in content["schedule"]) == 90
+    assert content["teacher_notes"][0].startswith("这是 Mock")
+
+    submitted = await client.post(
+        f"/api/v1/lesson-documents/{document['id']}/submit",
+        json={"reason": "教师完成初审", "version": document["version"]},
+        headers=headers,
+    )
+    assert submitted.json()["status"] == "PENDING_REVIEW"
+    approved = await client.post(
+        f"/api/v1/lesson-documents/{document['id']}/approve",
+        json={"reason": "内容和答案已复核", "version": submitted.json()["version"]},
+        headers=headers,
+    )
+    assert approved.json()["status"] == "APPROVED"
+    assert approved.json()["current_version"]["status"] == "APPROVED"
+    edited_content = approved.json()["current_version"]["content"]
+    edited_content["teacher_notes"].append("教师已完成第二次人工复核。")
+    edited = await client.put(
+        f"/api/v1/lesson-documents/{document['id']}",
+        json={
+            "content": edited_content,
+            "change_summary": "补充人工复核说明",
+            "version": approved.json()["version"],
+        },
+        headers=headers,
+    )
+    resubmitted = await client.post(
+        f"/api/v1/lesson-documents/{document['id']}/submit",
+        json={"reason": "提交第二版", "version": edited.json()["version"]},
+        headers=headers,
+    )
+    reapproved = await client.post(
+        f"/api/v1/lesson-documents/{document['id']}/approve",
+        json={"reason": "批准第二版", "version": resubmitted.json()["version"]},
+        headers=headers,
+    )
+    assert reapproved.json()["current_version"]["status"] == "APPROVED"
+    versions = await client.get(
+        f"/api/v1/lesson-documents/{document['id']}/versions"
+    )
+    assert [item["status"] for item in versions.json()] == ["APPROVED", "SUPERSEDED"]
+    exported = await client.post(
+        f"/api/v1/lesson-documents/{document['id']}/export.docx",
+        headers=headers,
+    )
+    assert exported.status_code == 200, exported.text
+    assert exported.content.startswith(b"PK")
+    assert "application/vnd.openxmlformats" in exported.headers["content-type"]

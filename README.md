@@ -1,6 +1,6 @@
 # 独立教师工作台
 
-仅供一名教师个人使用的课程与教学工作流系统。本仓库当前完成 **Phase 1：学生、学科、教学计划、课程与基础仪表盘**。AI 教案、课后反馈闭环、错题和收费仍属于后续阶段。
+仅供一名教师个人使用的课程与教学工作流系统。本仓库当前实现到 **Phase 2：AI 教案与 Word 导出**。课后反馈闭环、错题和收费仍属于后续阶段。
 
 ## 当前能力
 
@@ -10,11 +10,15 @@
 - 单节课程创建、月历/列表、编辑、完成、取消、调课和补课关联。
 - 课程完成前由教师确认实际时长及需要推进的计划条目。
 - 今日/未来七天课程、计划进度、本周和本月课时的基础仪表盘。
+- 结构化教案草稿：教学目标、时间安排、知识讲解、例题、练习、易错点、作业、答案解析和教师注意事项独立编辑。
+- Mock/OpenAI 统一 AI 接口、集中且版本化的提示词模板、后台生成任务和局部章节重生成。
+- 教案提交审核、批准/驳回、不可变版本历史，以及仅批准版本可导出的教师版 DOCX。
+- DOCX 使用年级样式配置，当前提供通用小学/初中/高中视觉档案；后续可在不改变教案数据结构的情况下增加固定模板。
 - Next.js 16 Web，通过同源代理访问 FastAPI；所有按钮均连接真实 API。
 - FastAPI `/health/live` 和 `/health/ready`，统一请求 ID 与错误结构。
 - PostgreSQL + SQLAlchemy 2 + Alembic 基础迁移。
 - PostgreSQL 队列 Worker，支持领取租约、心跳接口、有限重试及 Mock 任务。
-- AI 与文件存储统一接口；真实 OpenAI、Supabase 和 DOCX 功能留到对应阶段。
+- AI 与文件存储统一接口；OpenAI 使用 Responses API，模型名只由环境变量配置。
 - 前后端 lint、类型检查、测试、构建及 GitHub Actions。
 
 详细文档见 [docs/requirements.md](docs/requirements.md)、[docs/architecture.md](docs/architecture.md)、[docs/data-model.md](docs/data-model.md) 和 [docs/roadmap.md](docs/roadmap.md)。
@@ -153,8 +157,22 @@ cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync al
 
 当前不支持重复课程规则。调课会保留原课程为“已调课”，并创建一节关联的新课程；取消后的课程可在新建课程时选为补课来源。
 
+## Phase 2 使用说明
+
+访问 <http://localhost:3000/lesson-plans>，选择一节课程和提示词模板后创建生成任务。开发环境默认 `AI_PROVIDER=mock`，无需密钥且不会产生费用；启用真实模型时在服务端 `.env` 设置 `AI_PROVIDER=openai`、`OPENAI_API_KEY` 和 `OPENAI_MODEL`，重启 API 与 Worker。
+
+生成成功后可逐章节编辑并保存新版本，也可只重生成指定章节。教案须先提交审核并批准，Word 导出入口才会开放；任何编辑和重生成都会创建不可变新版本，不直接覆盖历史内容。提示词版本和当前 AI 配置可在 <http://localhost:3000/settings/ai> 查看与维护，页面不会显示 API 密钥。
+
+生成虚构示例文档：
+
+```powershell
+pnpm docx:sample
+```
+
+输出写入被 Git 忽略的 `var/exports`。当前公式以 Unicode/纯文本形式导出，不承诺 Word 原生 OMML 公式编辑；上传教材和旧教案的检索将在后续资料模块补充。
+
 ## 下一阶段
 
-Phase 2 将实现 AI 统一接口、集中提示词模板、教案草稿/审核/版本管理，以及 DOCX 示例和自动测试。Phase 1 不会调用付费模型，也没有提前实现错题、反馈闭环或收费模块。
+Phase 3 将实现关键词反馈、AI 结构化整理、教师审核，以及批准后在单个事务中更新课程进度、知识点掌握证据和下次课建议。Phase 2 没有提前实现错题生成或收费模块。
 
 项目的提交和推送必须遵循 [AGENTS.md](AGENTS.md) 中的“双重确认”流程。

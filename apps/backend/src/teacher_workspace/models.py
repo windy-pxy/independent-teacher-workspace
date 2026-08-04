@@ -65,6 +65,20 @@ class LessonStatus(StrEnum):
     RESCHEDULED = "RESCHEDULED"
 
 
+class ReviewStatus(StrEnum):
+    DRAFT = "DRAFT"
+    PENDING_REVIEW = "PENDING_REVIEW"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    SUPERSEDED = "SUPERSEDED"
+
+
+class DocumentVersionSource(StrEnum):
+    AI_GENERATED = "AI_GENERATED"
+    MANUAL_EDIT = "MANUAL_EDIT"
+    PARTIAL_REGENERATION = "PARTIAL_REGENERATION"
+
+
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (
@@ -105,6 +119,12 @@ class AIJob(Base):
     __table_args__ = (Index("ix_ai_jobs_claim", "status", "available_at", "created_at"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    owner_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    prompt_template_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("prompt_template_versions.id", ondelete="SET NULL")
+    )
     task_type: Mapped[str] = mapped_column(String(100))
     status: Mapped[AIJobStatus] = mapped_column(
         Enum(AIJobStatus, native_enum=False, length=20),
@@ -360,3 +380,103 @@ class LessonPlanItem(Base):
     plan_item_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("teaching_plan_items.id", ondelete="RESTRICT"), index=True
     )
+
+
+class PromptTemplate(Base):
+    __tablename__ = "prompt_templates"
+    __table_args__ = (
+        UniqueConstraint("owner_user_id", "template_key", "grade_band", "subject_id"),
+        Index("ix_prompt_templates_owner_key", "owner_user_id", "template_key"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    subject_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("subjects.id", ondelete="CASCADE"), index=True
+    )
+    template_key: Mapped[str] = mapped_column(String(100))
+    name: Mapped[str] = mapped_column(String(200))
+    purpose: Mapped[str] = mapped_column(String(100))
+    grade_band: Mapped[str | None] = mapped_column(String(50))
+    current_version_number: Mapped[int] = mapped_column(Integer, default=1)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class PromptTemplateVersion(Base):
+    __tablename__ = "prompt_template_versions"
+    __table_args__ = (UniqueConstraint("template_id", "version_number"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    template_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("prompt_templates.id", ondelete="CASCADE"), index=True
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    system_prompt: Mapped[str] = mapped_column(Text)
+    user_prompt_template: Mapped[str] = mapped_column(Text)
+    output_schema: Mapped[dict[str, Any]] = mapped_column(JSON)
+    change_reason: Mapped[str] = mapped_column(String(500))
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class LessonDocument(Base):
+    __tablename__ = "lesson_documents"
+    __table_args__ = (
+        UniqueConstraint("lesson_id", "document_type"),
+        Index("ix_lesson_documents_lesson_status", "lesson_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    lesson_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("lessons.id", ondelete="CASCADE"), index=True
+    )
+    document_type: Mapped[str] = mapped_column(String(50), default="LESSON_PLAN")
+    title: Mapped[str] = mapped_column(String(300))
+    status: Mapped[ReviewStatus] = mapped_column(
+        Enum(ReviewStatus, native_enum=False, length=30), default=ReviewStatus.DRAFT
+    )
+    current_version_number: Mapped[int] = mapped_column(Integer, default=1)
+    approved_version_number: Mapped[int | None] = mapped_column(Integer)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class DocumentVersion(Base):
+    __tablename__ = "document_versions"
+    __table_args__ = (UniqueConstraint("document_id", "version_number"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    document_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("lesson_documents.id", ondelete="CASCADE"), index=True
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    source: Mapped[DocumentVersionSource] = mapped_column(
+        Enum(DocumentVersionSource, native_enum=False, length=30)
+    )
+    status: Mapped[ReviewStatus] = mapped_column(
+        Enum(ReviewStatus, native_enum=False, length=30), default=ReviewStatus.DRAFT
+    )
+    content: Mapped[dict[str, Any]] = mapped_column(JSON)
+    change_summary: Mapped[str] = mapped_column(String(500))
+    ai_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("ai_jobs.id", ondelete="SET NULL"), unique=True
+    )
+    docx_object_key: Mapped[str | None] = mapped_column(String(500))
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

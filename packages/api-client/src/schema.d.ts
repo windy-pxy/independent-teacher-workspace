@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/api/v1/ai-jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Ai Job */
+        get: operations["get_ai_job_api_v1_ai_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Ai Settings */
+        get: operations["get_ai_settings_api_v1_ai_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -64,6 +98,125 @@ export interface paths {
         };
         /** Dashboard */
         get: operations["dashboard_api_v1_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Lesson Document */
+        put: operations["save_lesson_document_api_v1_lesson_documents__document_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-documents/{document_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Document */
+        post: operations["approve_document_api_v1_lesson_documents__document_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-documents/{document_id}/export.docx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export Document Docx */
+        post: operations["export_document_docx_api_v1_lesson_documents__document_id__export_docx_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-documents/{document_id}/regenerate-section": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Regenerate Document Section */
+        post: operations["regenerate_document_section_api_v1_lesson_documents__document_id__regenerate_section_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-documents/{document_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Document */
+        post: operations["reject_document_api_v1_lesson_documents__document_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-documents/{document_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Document */
+        post: operations["submit_document_api_v1_lesson_documents__document_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-documents/{document_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Document Versions */
+        get: operations["list_document_versions_api_v1_lesson_documents__document_id__versions_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -142,6 +295,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lessons/{lesson_id}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Lesson Document */
+        get: operations["get_lesson_document_api_v1_lessons__lesson_id__document_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}/documents/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Lesson Document */
+        post: operations["generate_lesson_document_api_v1_lessons__lesson_id__documents_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/lessons/{lesson_id}/reschedule": {
         parameters: {
             query?: never;
@@ -153,6 +340,41 @@ export interface paths {
         put?: never;
         /** Reschedule Lesson */
         post: operations["reschedule_lesson_api_v1_lessons__lesson_id__reschedule_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prompt-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Prompt Templates */
+        get: operations["list_prompt_templates_api_v1_prompt_templates_get"];
+        put?: never;
+        /** Create Prompt Template */
+        post: operations["create_prompt_template_api_v1_prompt_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prompt-templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Prompt Template */
+        put: operations["update_prompt_template_api_v1_prompt_templates__template_id__put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -458,6 +680,58 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AIJobResponse */
+        AIJobResponse: {
+            /** Attempts Count */
+            attempts_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error Code */
+            error_code: string | null;
+            /** Error Message */
+            error_message: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Max Attempts */
+            max_attempts: number;
+            /** Model */
+            model: string | null;
+            /** Provider */
+            provider: string;
+            status: components["schemas"]["AIJobStatus"];
+            /** Task Type */
+            task_type: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * AIJobStatus
+         * @enum {string}
+         */
+        AIJobStatus: "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELED";
+        /** AISettingsResponse */
+        AISettingsResponse: {
+            /**
+             * Development Default Is Mock
+             * @default true
+             */
+            development_default_is_mock: boolean;
+            /** Model */
+            model: string | null;
+            /** Provider */
+            provider: string;
+            /** Real Provider Configured */
+            real_provider_configured: boolean;
+        };
         /** ArchiveRequest */
         ArchiveRequest: {
             /** Reason */
@@ -511,6 +785,42 @@ export interface components {
             timezone: "Asia/Shanghai";
             /** Today */
             today: components["schemas"]["LessonResponse"][];
+        };
+        /** DocumentVersionResponse */
+        DocumentVersionResponse: {
+            /** Ai Job Id */
+            ai_job_id: string | null;
+            /** Change Summary */
+            change_summary: string;
+            content: components["schemas"]["LessonPlanContent"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Docx Object Key */
+            docx_object_key: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            source: components["schemas"]["DocumentVersionSource"];
+            status: components["schemas"]["ReviewStatus"];
+            /** Version Number */
+            version_number: number;
+        };
+        /**
+         * DocumentVersionSource
+         * @enum {string}
+         */
+        DocumentVersionSource: "AI_GENERATED" | "MANUAL_EDIT" | "PARTIAL_REGENERATION";
+        /** GenerateLessonPlanRequest */
+        GenerateLessonPlanRequest: {
+            /** Extra Requirements */
+            extra_requirements?: string | null;
+            /** Template Id */
+            template_id?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -574,6 +884,53 @@ export interface components {
             student_subject_id: string;
             /** Theme */
             theme: string;
+        };
+        /** LessonDocumentResponse */
+        LessonDocumentResponse: {
+            /** Approved Version Number */
+            approved_version_number: number | null;
+            current_version: components["schemas"]["DocumentVersionResponse"];
+            /** Current Version Number */
+            current_version_number: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            status: components["schemas"]["ReviewStatus"];
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+        };
+        /** LessonPlanContent */
+        LessonPlanContent: {
+            /** Common Mistakes */
+            common_mistakes: string[];
+            /** Examples */
+            examples: components["schemas"]["QuestionItem"][];
+            /** Homework */
+            homework: components["schemas"]["QuestionItem"][];
+            /** In Class Exercises */
+            in_class_exercises: components["schemas"]["QuestionItem"][];
+            /** Knowledge Explanations */
+            knowledge_explanations: components["schemas"]["TeachingSection"][];
+            /** Objectives */
+            objectives: string[];
+            /** Schedule */
+            schedule: components["schemas"]["TimeBlock"][];
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "1.0";
+            /** Teacher Notes */
+            teacher_notes: string[];
         };
         /** LessonReschedule */
         LessonReschedule: {
@@ -844,6 +1201,132 @@ export interface components {
             progress_notes?: string | null;
             status: components["schemas"]["PlanItemStatus"];
         };
+        /** PromptTemplateCreate */
+        PromptTemplateCreate: {
+            /** Change Reason */
+            change_reason: string;
+            /** Grade Band */
+            grade_band?: string | null;
+            /** Name */
+            name: string;
+            /** Purpose */
+            purpose: string;
+            /** Subject Id */
+            subject_id?: string | null;
+            /** System Prompt */
+            system_prompt: string;
+            /** Template Key */
+            template_key: string;
+            /** User Prompt Template */
+            user_prompt_template: string;
+        };
+        /** PromptTemplateResponse */
+        PromptTemplateResponse: {
+            current_version: components["schemas"]["PromptTemplateVersionResponse"];
+            /** Current Version Number */
+            current_version_number: number;
+            /** Grade Band */
+            grade_band: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Purpose */
+            purpose: string;
+            /** Subject Id */
+            subject_id: string | null;
+            /** Template Key */
+            template_key: string;
+        };
+        /** PromptTemplateUpdate */
+        PromptTemplateUpdate: {
+            /** Change Reason */
+            change_reason: string;
+            /** Current Version Number */
+            current_version_number: number;
+            /** Name */
+            name: string;
+            /** System Prompt */
+            system_prompt: string;
+            /** User Prompt Template */
+            user_prompt_template: string;
+        };
+        /** PromptTemplateVersionResponse */
+        PromptTemplateVersionResponse: {
+            /** Change Reason */
+            change_reason: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Output Schema */
+            output_schema: {
+                [key: string]: unknown;
+            };
+            /** System Prompt */
+            system_prompt: string;
+            /** User Prompt Template */
+            user_prompt_template: string;
+            /** Version Number */
+            version_number: number;
+        };
+        /** QuestionItem */
+        QuestionItem: {
+            /** Analysis Markdown */
+            analysis_markdown: string;
+            /** Answer Markdown */
+            answer_markdown: string;
+            /**
+             * Difficulty
+             * @enum {string}
+             */
+            difficulty: "BASIC" | "MEDIUM" | "CHALLENGING";
+            /** Id */
+            id: string;
+            /** Stem Markdown */
+            stem_markdown: string;
+        };
+        /** RegenerateSectionRequest */
+        RegenerateSectionRequest: {
+            /** Instructions */
+            instructions: string;
+            /**
+             * Section
+             * @enum {string}
+             */
+            section: "objectives" | "schedule" | "knowledge_explanations" | "examples" | "in_class_exercises" | "common_mistakes" | "homework" | "teacher_notes";
+            /** Version */
+            version: number;
+        };
+        /** ReviewActionRequest */
+        ReviewActionRequest: {
+            /** Reason */
+            reason: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * ReviewStatus
+         * @enum {string}
+         */
+        ReviewStatus: "DRAFT" | "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "SUPERSEDED";
+        /** SaveDocumentRequest */
+        SaveDocumentRequest: {
+            /** Change Summary */
+            change_summary: string;
+            content: components["schemas"]["LessonPlanContent"];
+            /** Version */
+            version: number;
+        };
         /** StudentCreate */
         StudentCreate: {
             /** Display Name */
@@ -1028,6 +1511,24 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** TeachingSection */
+        TeachingSection: {
+            /** Body Markdown */
+            body_markdown: string;
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /** TimeBlock */
+        TimeBlock: {
+            /** Activities Markdown */
+            activities_markdown: string;
+            /** Minutes */
+            minutes: number;
+            /** Title */
+            title: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -1050,6 +1551,57 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_ai_job_api_v1_ai_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ai_settings_api_v1_ai_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AISettingsResponse"];
+                };
+            };
+        };
+    };
     login_api_v1_auth_login_post: {
         parameters: {
             query?: never;
@@ -1137,6 +1689,243 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardResponse"];
+                };
+            };
+        };
+    };
+    save_lesson_document_api_v1_lesson_documents__document_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonDocumentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_document_api_v1_lesson_documents__document_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonDocumentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_document_docx_api_v1_lesson_documents__document_id__export_docx_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    regenerate_document_section_api_v1_lesson_documents__document_id__regenerate_section_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegenerateSectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_document_api_v1_lesson_documents__document_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonDocumentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_document_api_v1_lesson_documents__document_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonDocumentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_document_versions_api_v1_lesson_documents__document_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentVersionResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1344,6 +2133,72 @@ export interface operations {
             };
         };
     };
+    get_lesson_document_api_v1_lessons__lesson_id__document_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonDocumentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_lesson_document_api_v1_lessons__lesson_id__documents_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateLessonPlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reschedule_lesson_api_v1_lessons__lesson_id__reschedule_post: {
         parameters: {
             query?: never;
@@ -1366,6 +2221,94 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LessonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_prompt_templates_api_v1_prompt_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptTemplateResponse"][];
+                };
+            };
+        };
+    };
+    create_prompt_template_api_v1_prompt_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptTemplateCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptTemplateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_prompt_template_api_v1_prompt_templates__template_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptTemplateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptTemplateResponse"];
                 };
             };
             /** @description Validation Error */

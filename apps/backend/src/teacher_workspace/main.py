@@ -15,6 +15,7 @@ from teacher_workspace.config import get_settings
 from teacher_workspace.db import dispose_engine
 from teacher_workspace.health import router as health_router
 from teacher_workspace.phase1 import router as phase1_router
+from teacher_workspace.phase2 import router as phase2_router
 
 
 @asynccontextmanager
@@ -41,6 +42,7 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(phase1_router)
+app.include_router(phase2_router)
 
 
 @app.middleware("http")

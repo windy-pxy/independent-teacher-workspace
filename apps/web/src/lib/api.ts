@@ -42,6 +42,36 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await response.json()) as T;
 }
 
+export async function apiBlob(
+  path: string,
+  init: RequestInit = {},
+): Promise<{ blob: Blob; filename: string }> {
+  const method = (init.method ?? "GET").toUpperCase();
+  const headers = new Headers(init.headers);
+  if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
+    const csrf = cookie("teacher_workspace_session_csrf");
+    if (csrf) headers.set("X-CSRF-Token", decodeURIComponent(csrf));
+  }
+  const response = await fetch(`/api/v1${path}`, {
+    ...init,
+    headers,
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as
+      | { message?: string; code?: string }
+      | null;
+    throw new ApiError(body?.message ?? "下载失败", response.status, body?.code ?? "HTTP_ERROR");
+  }
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const encodedFilename = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  return {
+    blob: await response.blob(),
+    filename: encodedFilename ? decodeURIComponent(encodedFilename) : "教师版教案.docx",
+  };
+}
+
 export function jsonBody(value: unknown): Pick<RequestInit, "body"> {
   return { body: JSON.stringify(value) };
 }

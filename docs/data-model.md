@@ -1,6 +1,6 @@
 # 数据库 ER 设计
 
-Phase 0 初始迁移创建 `User`、`UserSession`、`AIJob`、`AIJobAttempt`、`AuditLog`。Phase 1 已新增 `Subject`、`Student`、`StudentSubject`、`TeachingPlan`、`TeachingPlanItem`、`TeachingPlanRevision`、`Lesson` 和 `LessonPlanItem`；图中其余实体仍按后续阶段补充迁移。
+Phase 0 初始迁移创建 `User`、`UserSession`、`AIJob`、`AIJobAttempt`、`AuditLog`。Phase 1 新增学生、学科、计划和课程实体；Phase 2 新增 `PromptTemplate`、`PromptTemplateVersion`、`LessonDocument` 和 `DocumentVersion`，并把 AI 任务关联到教师和提示词版本。图中其余实体仍按后续阶段补充迁移。
 
 ```mermaid
 erDiagram
@@ -42,6 +42,8 @@ erDiagram
 - `TeachingPlanRevision` 保存每次人工批准后的计划快照和调整原因。
 - `LessonFeedback` 是逻辑记录，`LessonFeedbackVersion` 保存关键词输入、AI 草稿、教师编辑和批准状态。
 - `LessonDocument` 是逻辑文档，`DocumentVersion` 保存结构化内容和导出对象键。
+- `DocumentVersion` 对 `(lesson_document_id, version_number)` 唯一，且生成任务 `ai_job_id` 唯一；审核只改变版本状态，不覆盖 `content_json`。
+- `PromptTemplateVersion` 保存不可变系统提示、用户模板和输出 Schema；`PromptTemplate` 只保存逻辑键、适用年级和当前版本指针。
 - `StudentMastery` 保存当前结构化等级；`MasteryEvidence` 保存每次变更的来源、前后等级和原因。
 - `Payment` 是实际到账交易；`PaymentAllocation` 保存分摊到课程的金额。付款状态由分摊合计计算。
 - `AIJob` 是业务任务；每次提供商调用或 Worker 尝试写入 `AIJobAttempt`，避免重复 API 日志实体。
@@ -63,5 +65,7 @@ erDiagram
 - `student_mastery(student_subject_id, knowledge_point_id)` 唯一。
 - `wrong_question(student_subject_id, mastery_status, last_reviewed_at)`。
 - `ai_job(status, available_at, created_at)` 及唯一幂等键。
+- `lesson_document(lesson_id)`、`document_version(lesson_document_id, version_number)` 唯一；`document_version(ai_job_id)` 受控唯一。
+- `prompt_template(logical_key, grade_band)` 唯一，`prompt_template_version(prompt_template_id, version_number)` 唯一。
 - `payment_allocation(payment_id, lesson_id)` 唯一，并单独索引 `lesson_id`。
 - `audit_log(entity_type, entity_id, created_at)`；上传文件索引 SHA-256。

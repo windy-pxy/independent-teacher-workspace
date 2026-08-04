@@ -6,7 +6,7 @@
 
 - 本项目是单教师使用的学生、课程、教案、反馈、错题和收费工作台。
 - FastAPI 是唯一业务规则和数据库写入边界；Next.js 不得直连数据库或 Supabase 表。
-- Phase 0 仅维护工程骨架和健康检查。不得用假按钮、内存假数据或静态页面冒充后续业务完成。
+- 当前实现到 Phase 2。不得提前实现 Phase 3 的反馈闭环、Phase 4 的错题生成或 Phase 5 的收费模块，也不得用假按钮、内存假数据或静态页面冒充业务完成。
 - 开发、测试、截图和示例文档只能使用明确虚构的学生资料。
 
 ## 架构约束
@@ -30,6 +30,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm api:generate
+pnpm docx:sample
 pnpm build
 pnpm check
 pnpm db:migrate

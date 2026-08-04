@@ -91,6 +91,16 @@ async def complete_job(
         )
         if attempt:
             attempt.status = "SUCCEEDED"
+            provider_request_id = output.get("provider_request_id")
+            attempt.provider_request_id = (
+                str(provider_request_id)[:255] if provider_request_id else None
+            )
+            input_tokens = output.get("input_tokens")
+            output_tokens = output.get("output_tokens")
+            attempt.input_tokens = int(input_tokens) if isinstance(input_tokens, int) else None
+            attempt.output_tokens = (
+                int(output_tokens) if isinstance(output_tokens, int) else None
+            )
             attempt.finished_at = now_utc()
 
 
