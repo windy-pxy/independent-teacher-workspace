@@ -225,6 +225,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lesson-feedbacks/{feedback_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Feedback */
+        put: operations["save_feedback_api_v1_lesson_feedbacks__feedback_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-feedbacks/{feedback_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Feedback */
+        post: operations["approve_feedback_api_v1_lesson_feedbacks__feedback_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-feedbacks/{feedback_id}/organize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Organize Feedback */
+        post: operations["organize_feedback_api_v1_lesson_feedbacks__feedback_id__organize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-feedbacks/{feedback_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Feedback */
+        post: operations["reject_feedback_api_v1_lesson_feedbacks__feedback_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-feedbacks/{feedback_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Feedback */
+        post: operations["submit_feedback_api_v1_lesson_feedbacks__feedback_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lesson-feedbacks/{feedback_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Feedback Versions */
+        get: operations["list_feedback_versions_api_v1_lesson_feedbacks__feedback_id__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/lessons": {
         parameters: {
             query?: never;
@@ -329,6 +431,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lessons/{lesson_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Feedback */
+        get: operations["get_feedback_api_v1_lessons__lesson_id__feedback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}/feedback/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Feedback Draft */
+        post: operations["create_feedback_draft_api_v1_lessons__lesson_id__feedback_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/lessons/{lesson_id}/reschedule": {
         parameters: {
             query?: never;
@@ -427,6 +563,23 @@ export interface paths {
         put?: never;
         /** Archive Student Subject */
         post: operations["archive_student_subject_api_v1_student_subjects__entity_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student-subjects/{student_subject_id}/mastery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Mastery */
+        get: operations["list_mastery_api_v1_student_subjects__student_subject_id__mastery_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -773,6 +926,8 @@ export interface components {
             completed_this_month: number;
             /** Next Seven Days */
             next_seven_days: components["schemas"]["LessonResponse"][];
+            /** Pending Feedback Count */
+            pending_feedback_count: number;
             /** Planned This Week */
             planned_this_week: number;
             /** Progress */
@@ -815,6 +970,92 @@ export interface components {
          * @enum {string}
          */
         DocumentVersionSource: "AI_GENERATED" | "MANUAL_EDIT" | "PARTIAL_REGENERATION";
+        /** FeedbackAIJobResponse */
+        FeedbackAIJobResponse: {
+            /** Attempts Count */
+            attempts_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error Code */
+            error_code: string | null;
+            /** Error Message */
+            error_message: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Max Attempts */
+            max_attempts: number;
+            /** Model */
+            model: string | null;
+            /** Provider */
+            provider: string;
+            status: components["schemas"]["AIJobStatus"];
+            /** Task Type */
+            task_type: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** FeedbackOrganizeRequest */
+        FeedbackOrganizeRequest: {
+            /** Instructions */
+            instructions?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** FeedbackReviewRequest */
+        FeedbackReviewRequest: {
+            /** Reason */
+            reason: string;
+            /** Version */
+            version: number;
+        };
+        /** FeedbackSaveRequest */
+        FeedbackSaveRequest: {
+            /** Change Summary */
+            change_summary: string;
+            content: components["schemas"]["LessonFeedbackContent"];
+            /** Version */
+            version: number;
+        };
+        /** FeedbackVersionResponse */
+        FeedbackVersionResponse: {
+            /** Ai Job Id */
+            ai_job_id: string | null;
+            /** Change Summary */
+            change_summary: string;
+            content: components["schemas"]["LessonFeedbackContent"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Raw Input */
+            raw_input: {
+                [key: string]: string | null;
+            };
+            source: components["schemas"]["FeedbackVersionSource"];
+            status: components["schemas"]["ReviewStatus"];
+            /** Version Number */
+            version_number: number;
+        };
+        /**
+         * FeedbackVersionSource
+         * @enum {string}
+         */
+        FeedbackVersionSource: "QUICK_ENTRY" | "AI_ORGANIZED" | "MANUAL_EDIT";
         /** GenerateLessonPlanRequest */
         GenerateLessonPlanRequest: {
             /** Extra Requirements */
@@ -905,6 +1146,59 @@ export interface components {
             status: components["schemas"]["ReviewStatus"];
             /** Title */
             title: string;
+            /** Version */
+            version: number;
+        };
+        /** LessonFeedbackContent */
+        LessonFeedbackContent: {
+            /** Actual Completed Content */
+            actual_completed_content: string[];
+            /** Homework Completion */
+            homework_completion: string;
+            /** Mastery Updates */
+            mastery_updates: components["schemas"]["MasteryProposal"][];
+            /** Next Lesson Special Arrangement */
+            next_lesson_special_arrangement: string;
+            /** Next Lesson Suggestion */
+            next_lesson_suggestion: string;
+            /** Plan Progress Updates */
+            plan_progress_updates: components["schemas"]["PlanProgressProposal"][];
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "1.0";
+            /** Strong Knowledge Points */
+            strong_knowledge_points: string[];
+            /** Structured Summary */
+            structured_summary: string;
+            /** Student Performance */
+            student_performance: string;
+            /** Typical Mistakes */
+            typical_mistakes: string[];
+            /** Unfinished Content */
+            unfinished_content: string[];
+            /** Weak Knowledge Points */
+            weak_knowledge_points: string[];
+        };
+        /** LessonFeedbackResponse */
+        LessonFeedbackResponse: {
+            /** Approved Version Number */
+            approved_version_number: number | null;
+            current_version: components["schemas"]["FeedbackVersionResponse"];
+            /** Current Version Number */
+            current_version_number: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            status: components["schemas"]["ReviewStatus"];
             /** Version */
             version: number;
         };
@@ -1028,6 +1322,51 @@ export interface components {
         LoginResponse: {
             user: components["schemas"]["AuthUser"];
         };
+        /**
+         * MasteryLevel
+         * @enum {string}
+         */
+        MasteryLevel: "UNLEARNED" | "WEAK" | "DEVELOPING" | "PROFICIENT" | "MASTERED";
+        /** MasteryProposal */
+        MasteryProposal: {
+            /** Evidence Note */
+            evidence_note: string;
+            /** Knowledge Point Id */
+            knowledge_point_id: string | null;
+            /** Knowledge Point Name */
+            knowledge_point_name: string;
+            level: components["schemas"]["MasteryLevel"];
+        };
+        /** MasteryResponse */
+        MasteryResponse: {
+            /** Evidence Count */
+            evidence_count: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Knowledge Point Id
+             * Format: uuid
+             */
+            knowledge_point_id: string;
+            /** Knowledge Point Name */
+            knowledge_point_name: string;
+            level: components["schemas"]["MasteryLevel"];
+            /**
+             * Student Subject Id
+             * Format: uuid
+             */
+            student_subject_id: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version */
+            version: number;
+        };
         /** PlanCreate */
         PlanCreate: {
             /** Description */
@@ -1134,6 +1473,23 @@ export interface components {
             title: string;
             /** Version */
             version: number;
+        };
+        /** PlanProgressProposal */
+        PlanProgressProposal: {
+            /** Actual Minutes Delta */
+            actual_minutes_delta: number;
+            /**
+             * Plan Item Id
+             * Format: uuid
+             */
+            plan_item_id: string;
+            /** Progress Note */
+            progress_note: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "IN_PROGRESS" | "COMPLETED" | "REVIEW_NEEDED";
         };
         /** PlanResponse */
         PlanResponse: {
@@ -1294,6 +1650,25 @@ export interface components {
             id: string;
             /** Stem Markdown */
             stem_markdown: string;
+        };
+        /** QuickFeedbackInput */
+        QuickFeedbackInput: {
+            /** Actual Completed Content */
+            actual_completed_content?: string | null;
+            /** Homework Completion */
+            homework_completion?: string | null;
+            /** Next Lesson Special Arrangement */
+            next_lesson_special_arrangement?: string | null;
+            /** Strong Knowledge Points */
+            strong_knowledge_points?: string | null;
+            /** Student Performance */
+            student_performance?: string | null;
+            /** Typical Mistakes */
+            typical_mistakes?: string | null;
+            /** Unfinished Content */
+            unfinished_content?: string | null;
+            /** Weak Knowledge Points */
+            weak_knowledge_points?: string | null;
         };
         /** RegenerateSectionRequest */
         RegenerateSectionRequest: {
@@ -1930,6 +2305,212 @@ export interface operations {
             };
         };
     };
+    save_feedback_api_v1_lesson_feedbacks__feedback_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                feedback_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonFeedbackResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_feedback_api_v1_lesson_feedbacks__feedback_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                feedback_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonFeedbackResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    organize_feedback_api_v1_lesson_feedbacks__feedback_id__organize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                feedback_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackOrganizeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackAIJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_feedback_api_v1_lesson_feedbacks__feedback_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                feedback_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonFeedbackResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_feedback_api_v1_lesson_feedbacks__feedback_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                feedback_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonFeedbackResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_feedback_versions_api_v1_lesson_feedbacks__feedback_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                feedback_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackVersionResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_lessons_api_v1_lessons_get: {
         parameters: {
             query?: {
@@ -2199,6 +2780,72 @@ export interface operations {
             };
         };
     };
+    get_feedback_api_v1_lessons__lesson_id__feedback_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonFeedbackResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_feedback_draft_api_v1_lessons__lesson_id__feedback_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuickFeedbackInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonFeedbackResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reschedule_lesson_api_v1_lessons__lesson_id__reschedule_post: {
         parameters: {
             query?: never;
@@ -2443,6 +3090,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentSubjectResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_mastery_api_v1_student_subjects__student_subject_id__mastery_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_subject_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MasteryResponse"][];
                 };
             };
             /** @description Validation Error */

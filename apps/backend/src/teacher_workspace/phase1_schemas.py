@@ -264,4 +264,5 @@ class DashboardResponse(BaseModel):
     progress: list[DashboardProgress]
     planned_this_week: int
     completed_this_month: int
+    pending_feedback_count: int
     timezone: Literal["Asia/Shanghai"] = "Asia/Shanghai"

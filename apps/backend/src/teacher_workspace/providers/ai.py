@@ -52,11 +52,64 @@ class MockAIProvider:
     async def generate(self, request: AIRequest) -> AIResult:
         structured = None
         if request.schema:
-            total_minutes = int((request.context or {}).get("planned_minutes", 120))
-            weights = (10, 30, 35, 15, 10)
-            durations = [max(1, total_minutes * weight // 100) for weight in weights]
-            durations[-1] += total_minutes - sum(durations)
-            structured = {
+            context = request.context or {}
+            if context.get("task_type") == "lesson_feedback":
+                plan_item_ids = list(context.get("plan_item_ids") or [])
+                structured = {
+                    "schema_version": "1.0",
+                    "actual_completed_content": ["完成本节计划的核心内容"],
+                    "unfinished_content": ["未记录"],
+                    "student_performance": "学生能跟随讲解完成基础练习，具体表现请教师复核。",
+                    "strong_knowledge_points": ["基础概念识别"],
+                    "weak_knowledge_points": ["综合应用"],
+                    "typical_mistakes": ["步骤不完整"],
+                    "homework_completion": "未记录",
+                    "next_lesson_special_arrangement": "先进行五分钟诊断复习。",
+                    "structured_summary": "本节完成核心内容，基础理解尚可，综合应用需要继续巩固。",
+                    "next_lesson_suggestion": "复习薄弱知识点后安排一道基础题和一道变式题。",
+                    "plan_progress_updates": (
+                        [
+                            {
+                                "plan_item_id": plan_item_ids[0],
+                                "status": "IN_PROGRESS",
+                                "actual_minutes_delta": int(
+                                    context.get("actual_minutes") or 0
+                                ),
+                                "progress_note": "根据课后反馈建议标记为进行中。",
+                            }
+                        ]
+                        if plan_item_ids
+                        else []
+                    ),
+                    "mastery_updates": [
+                        {
+                            "knowledge_point_id": None,
+                            "knowledge_point_name": "综合应用",
+                            "level": "WEAK",
+                            "evidence_note": "课堂关键词显示综合应用仍需巩固。",
+                        }
+                    ],
+                }
+            else:
+                structured = self._lesson_plan_result(context)
+        return AIResult(
+            content=(
+                json.dumps(structured, ensure_ascii=False)
+                if structured
+                else "Mock AI response"
+            ),
+            structured=structured,
+            provider_request_id="mock",
+            input_tokens=0,
+            output_tokens=0,
+        )
+
+    def _lesson_plan_result(self, context: dict[str, Any]) -> dict[str, Any]:
+        total_minutes = int(context.get("planned_minutes", 120))
+        weights = (10, 30, 35, 15, 10)
+        durations = [max(1, total_minutes * weight // 100) for weight in weights]
+        durations[-1] += total_minutes - sum(durations)
+        return {
                 "schema_version": "1.0",
                 "objectives": ["理解本节核心概念", "能够独立完成基础与迁移练习"],
                 "schedule": [
@@ -122,18 +175,7 @@ class MockAIProvider:
                     }
                 ],
                 "teacher_notes": ["这是 Mock 生成的虚构草稿，必须由教师审核后使用。"],
-            }
-        return AIResult(
-            content=(
-                json.dumps(structured, ensure_ascii=False)
-                if structured
-                else "Mock AI response"
-            ),
-            structured=structured,
-            provider_request_id="mock",
-            input_tokens=0,
-            output_tokens=0,
-        )
+        }
 
     async def cancel(self, provider_request_id: str) -> bool:
         return provider_request_id == "mock"
@@ -187,6 +229,75 @@ class OpenAIResponsesProvider:
         return False
 
 
+class DeepSeekChatProvider:
+    def __init__(
+        self, api_key: str, model: str, base_url: str, max_output_tokens: int
+    ) -> None:
+        self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        self.model = model
+        self.max_output_tokens = max_output_tokens
+
+    @property
+    def capabilities(self) -> AICapabilities:
+        return AICapabilities(
+            text=True, structured_output=True, vision=False, cancellation=False
+        )
+
+    async def generate(self, request: AIRequest) -> AIResult:
+        schema_instruction = ""
+        response_format: dict[str, str] | None = None
+        if request.schema:
+            response_format = {"type": "json_object"}
+            schema_instruction = (
+                "\n\n请只输出 JSON，并严格遵循以下 JSON Schema：\n"
+                + json.dumps(request.schema, ensure_ascii=False)
+            )
+        request_kwargs: dict[str, Any] = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": request.instructions or ""},
+                {"role": "user", "content": request.prompt + schema_instruction},
+            ],
+            "max_tokens": self.max_output_tokens,
+            "stream": False,
+        }
+        if response_format is not None:
+            request_kwargs["response_format"] = response_format
+        response = await self.client.chat.completions.create(**request_kwargs)
+        content = response.choices[0].message.content
+        if not content:
+            raise RuntimeError("DeepSeek returned empty content")
+        structured = json.loads(content) if request.schema else None
+        usage = response.usage
+        return AIResult(
+            content=content,
+            structured=structured,
+            provider_request_id=response.id,
+            input_tokens=usage.prompt_tokens if usage else None,
+            output_tokens=usage.completion_tokens if usage else None,
+        )
+
+    async def cancel(self, provider_request_id: str) -> bool:
+        del provider_request_id
+        return False
+
+
+def configured_ai_model(settings: Settings) -> str | None:
+    if settings.ai_provider == "openai":
+        return settings.openai_model
+    if settings.ai_provider == "deepseek":
+        return settings.deepseek_model
+    return None
+
+
+def real_provider_configured(settings: Settings) -> bool:
+    if settings.ai_provider == "openai":
+        return bool(settings.openai_api_key and settings.openai_model)
+    if settings.ai_provider == "deepseek":
+        return bool(settings.deepseek_api_key and settings.deepseek_model)
+    return False
+
+
 def create_ai_provider(settings: Settings) -> AIProvider:
     if settings.ai_provider == "mock":
         return MockAIProvider()
@@ -196,6 +307,17 @@ def create_ai_provider(settings: Settings) -> AIProvider:
         return OpenAIResponsesProvider(
             settings.openai_api_key,
             settings.openai_model,
+            settings.ai_max_output_tokens,
+        )
+    if settings.ai_provider == "deepseek":
+        if not settings.deepseek_api_key or not settings.deepseek_model:
+            raise RuntimeError(
+                "DeepSeek provider requires DEEPSEEK_API_KEY and DEEPSEEK_MODEL"
+            )
+        return DeepSeekChatProvider(
+            settings.deepseek_api_key,
+            settings.deepseek_model,
+            settings.deepseek_base_url,
             settings.ai_max_output_tokens,
         )
     raise RuntimeError(f"Unsupported AI provider: {settings.ai_provider}")

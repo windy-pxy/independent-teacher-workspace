@@ -8,6 +8,7 @@ from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import dispose_engine, get_session_factory
 from teacher_workspace.models import AIJob
 from teacher_workspace.phase2_service import execute_lesson_plan_job
+from teacher_workspace.phase3_service import execute_feedback_job
 from teacher_workspace.queue import claim_next_job, complete_job, fail_job
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,8 @@ async def execute_job(
 ) -> dict[str, object]:
     if job.task_type in {"lesson_plan.generate", "lesson_plan.regenerate_section"}:
         return await execute_lesson_plan_job(job, session_factory, settings)
+    if job.task_type == "lesson_feedback.organize":
+        return await execute_feedback_job(job, session_factory, settings)
     return await execute_mock_job(job)
 
 

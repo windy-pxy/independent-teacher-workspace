@@ -15,3 +15,8 @@ def test_comma_separated_environment_lists(monkeypatch: pytest.MonkeyPatch) -> N
 def test_short_session_secret_is_rejected() -> None:
     with pytest.raises(ValidationError, match="at least 32"):
         Settings(session_secret="too-short")
+
+
+def test_ai_provider_is_restricted_to_supported_adapters() -> None:
+    with pytest.raises(ValidationError):
+        Settings(session_secret="x" * 32, ai_provider="unknown")  # type: ignore[arg-type]

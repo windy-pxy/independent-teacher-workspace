@@ -79,6 +79,20 @@ class DocumentVersionSource(StrEnum):
     PARTIAL_REGENERATION = "PARTIAL_REGENERATION"
 
 
+class FeedbackVersionSource(StrEnum):
+    QUICK_ENTRY = "QUICK_ENTRY"
+    AI_ORGANIZED = "AI_ORGANIZED"
+    MANUAL_EDIT = "MANUAL_EDIT"
+
+
+class MasteryLevel(StrEnum):
+    UNLEARNED = "UNLEARNED"
+    WEAK = "WEAK"
+    DEVELOPING = "DEVELOPING"
+    PROFICIENT = "PROFICIENT"
+    MASTERED = "MASTERED"
+
+
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (
@@ -476,6 +490,127 @@ class DocumentVersion(Base):
         ForeignKey("ai_jobs.id", ondelete="SET NULL"), unique=True
     )
     docx_object_key: Mapped[str | None] = mapped_column(String(500))
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class LessonFeedback(Base):
+    __tablename__ = "lesson_feedbacks"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    lesson_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("lessons.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    status: Mapped[ReviewStatus] = mapped_column(
+        Enum(ReviewStatus, native_enum=False, length=30), default=ReviewStatus.DRAFT
+    )
+    current_version_number: Mapped[int] = mapped_column(Integer, default=0)
+    approved_version_number: Mapped[int | None] = mapped_column(Integer)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class LessonFeedbackVersion(Base):
+    __tablename__ = "lesson_feedback_versions"
+    __table_args__ = (UniqueConstraint("feedback_id", "version_number"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    feedback_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("lesson_feedbacks.id", ondelete="CASCADE"), index=True
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    source: Mapped[FeedbackVersionSource] = mapped_column(
+        Enum(FeedbackVersionSource, native_enum=False, length=30)
+    )
+    status: Mapped[ReviewStatus] = mapped_column(
+        Enum(ReviewStatus, native_enum=False, length=30), default=ReviewStatus.DRAFT
+    )
+    raw_input: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    content: Mapped[dict[str, Any]] = mapped_column(JSON)
+    change_summary: Mapped[str] = mapped_column(String(500))
+    ai_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("ai_jobs.id", ondelete="SET NULL"), unique=True
+    )
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class KnowledgePoint(Base):
+    __tablename__ = "knowledge_points"
+    __table_args__ = (
+        UniqueConstraint("subject_id", "normalized_name"),
+        Index("ix_knowledge_points_subject_parent", "subject_id", "parent_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("subjects.id", ondelete="RESTRICT"), index=True
+    )
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("knowledge_points.id", ondelete="SET NULL")
+    )
+    name: Mapped[str] = mapped_column(String(200))
+    normalized_name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str | None] = mapped_column(Text)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class StudentMastery(Base):
+    __tablename__ = "student_masteries"
+    __table_args__ = (
+        UniqueConstraint("student_subject_id", "knowledge_point_id"),
+        Index("ix_student_masteries_level", "student_subject_id", "level"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    student_subject_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("student_subjects.id", ondelete="CASCADE"), index=True
+    )
+    knowledge_point_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("knowledge_points.id", ondelete="RESTRICT"), index=True
+    )
+    level: Mapped[MasteryLevel] = mapped_column(
+        Enum(MasteryLevel, native_enum=False, length=30),
+        default=MasteryLevel.UNLEARNED,
+    )
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class MasteryEvidence(Base):
+    __tablename__ = "mastery_evidence"
+    __table_args__ = (
+        UniqueConstraint("mastery_id", "feedback_version_id"),
+        Index("ix_mastery_evidence_mastery_created", "mastery_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    mastery_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("student_masteries.id", ondelete="CASCADE"), index=True
+    )
+    feedback_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("lesson_feedback_versions.id", ondelete="RESTRICT"), index=True
+    )
+    previous_level: Mapped[MasteryLevel] = mapped_column(
+        Enum(MasteryLevel, native_enum=False, length=30)
+    )
+    new_level: Mapped[MasteryLevel] = mapped_column(
+        Enum(MasteryLevel, native_enum=False, length=30)
+    )
+    reason: Mapped[str] = mapped_column(Text)
     created_by_user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT")
     )

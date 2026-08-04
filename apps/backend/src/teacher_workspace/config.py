@@ -1,6 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -42,9 +42,12 @@ class Settings(BaseSettings):
             "text/plain",
         ]
     )
-    ai_provider: str = "mock"
+    ai_provider: Literal["mock", "openai", "deepseek"] = "mock"
     openai_api_key: str | None = None
     openai_model: str | None = None
+    deepseek_api_key: str | None = None
+    deepseek_model: str | None = None
+    deepseek_base_url: str = "https://api.deepseek.com"
     ai_temperature: float | None = None
     ai_max_output_tokens: int = 8192
     worker_id: str = "local-worker"

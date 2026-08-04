@@ -15,6 +15,7 @@ from teacher_workspace.db import get_session
 from teacher_workspace.models import (
     AuditLog,
     Lesson,
+    LessonFeedback,
     LessonPlanItem,
     LessonStatus,
     PlanItemStatus,
@@ -1229,6 +1230,22 @@ async def dashboard(
         )
         or 0
     )
+    pending_feedback_count = int(
+        await session.scalar(
+            select(func.count())
+            .select_from(Lesson)
+            .join(StudentSubject, StudentSubject.id == Lesson.student_subject_id)
+            .join(Student, Student.id == StudentSubject.student_id)
+            .outerjoin(LessonFeedback, LessonFeedback.lesson_id == Lesson.id)
+            .where(
+                Student.owner_user_id == user.id,
+                Lesson.status == LessonStatus.COMPLETED,
+                Lesson.archived_at.is_(None),
+                LessonFeedback.approved_version_number.is_(None),
+            )
+        )
+        or 0
+    )
     student_subjects = (
         await session.scalars(
             select(StudentSubject)
@@ -1278,4 +1295,5 @@ async def dashboard(
         progress=progress,
         planned_this_week=planned_this_week,
         completed_this_month=completed_this_month,
+        pending_feedback_count=pending_feedback_count,
     )

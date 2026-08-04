@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 
@@ -11,6 +12,7 @@ from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.main import app
 from teacher_workspace.models import Base, TeachingPlanItem, User
+from teacher_workspace.phase3_service import _feedback_context
 from teacher_workspace.worker import run_once
 
 
@@ -389,3 +391,170 @@ async def test_mock_lesson_plan_review_and_docx_export(
     assert exported.status_code == 200, exported.text
     assert exported.content.startswith(b"PK")
     assert "application/vnd.openxmlformats" in exported.headers["content-type"]
+
+
+@pytest.mark.asyncio
+async def test_feedback_approval_updates_progress_and_mastery(
+    phase1_context: tuple[AsyncClient, async_sessionmaker[AsyncSession]],
+) -> None:
+    client, factory = phase1_context
+    headers = await login(client)
+    subject = (
+        await client.post(
+            "/api/v1/subjects", json={"name": "虚构化学"}, headers=headers
+        )
+    ).json()
+    student = (
+        await client.post(
+            "/api/v1/students",
+            json={"display_name": "示例学生丁", "grade": "九年级"},
+            headers=headers,
+        )
+    ).json()
+    link = (
+        await client.post(
+            "/api/v1/student-subjects",
+            json={
+                "student_id": student["id"],
+                "subject_id": subject["id"],
+                "current_foundation": "能区分常见物质",
+                "stage_goal": "掌握化学方程式基础",
+            },
+            headers=headers,
+        )
+    ).json()
+    plan = (
+        await client.post(
+            "/api/v1/teaching-plans",
+            json={
+                "student_subject_id": link["id"],
+                "name": "虚构化学阶段计划",
+                "description": "仅用于反馈闭环测试",
+            },
+            headers=headers,
+        )
+    ).json()
+    item = (
+        await client.post(
+            f"/api/v1/teaching-plans/{plan['id']}/items",
+            json={
+                "parent_id": None,
+                "item_type": "KNOWLEDGE_POINT",
+                "title": "化学方程式书写",
+                "description": None,
+                "sort_order": 1,
+                "estimated_minutes": 90,
+                "adjustment_reason": "建立虚构测试条目",
+            },
+            headers=headers,
+        )
+    ).json()
+    lesson = (
+        await client.post(
+            "/api/v1/lessons",
+            json={
+                "student_subject_id": link["id"],
+                "scheduled_start": (datetime.now(UTC) + timedelta(days=4)).isoformat(),
+                "planned_minutes": 90,
+                "lesson_type": "NEW_LESSON",
+                "theme": "化学方程式入门",
+                "plan_item_ids": [item["id"]],
+            },
+            headers=headers,
+        )
+    ).json()
+    completed = await client.post(
+        f"/api/v1/lessons/{lesson['id']}/complete",
+        json={
+            "actual_minutes": 85,
+            "progress_updates": [],
+            "adjustment_reason": "进度等待课后反馈审核",
+        },
+        headers=headers,
+    )
+    assert completed.status_code == 200, completed.text
+    assert (await client.get("/api/v1/dashboard")).json()["pending_feedback_count"] == 1
+    async with factory() as session:
+        owner_id = await session.scalar(select(User.id))
+        assert owner_id is not None
+        _, _, _, ai_context, _ = await _feedback_context(
+            session, uuid.UUID(lesson["id"]), owner_id
+        )
+        assert ai_context["student_alias"].startswith("学生-")
+        assert student["display_name"] not in ai_context.values()
+
+    draft = await client.post(
+        f"/api/v1/lessons/{lesson['id']}/feedback/drafts",
+        json={
+            "actual_completed_content": "配平基础，书写规范",
+            "student_performance": "概念理解较好，综合应用仍需提示",
+            "weak_knowledge_points": "综合应用",
+            "typical_mistakes": "漏写反应条件",
+            "next_lesson_special_arrangement": "先复习配平再做变式题",
+        },
+        headers=headers,
+    )
+    assert draft.status_code == 201, draft.text
+    organized = await client.post(
+        f"/api/v1/lesson-feedbacks/{draft.json()['id']}/organize",
+        json={"instructions": "忠于关键词，不补造事实", "version": draft.json()["version"]},
+        headers=headers,
+    )
+    assert organized.status_code == 202, organized.text
+    settings = Settings(
+        database_url="sqlite+aiosqlite:///:memory:",
+        session_secret="test-session-secret-that-is-long-enough",
+        trusted_origins=["http://test"],
+        ai_provider="mock",
+        worker_id="phase3-test-worker",
+    )
+    assert await run_once(factory, settings)
+    job = await client.get(f"/api/v1/ai-jobs/{organized.json()['id']}")
+    assert job.json()["status"] == "SUCCEEDED"
+
+    feedback = (
+        await client.get(f"/api/v1/lessons/{lesson['id']}/feedback")
+    ).json()
+    assert feedback["current_version"]["source"] == "AI_ORGANIZED"
+    assert feedback["current_version"]["content"]["plan_progress_updates"][0][
+        "actual_minutes_delta"
+    ] == 85
+    submitted = await client.post(
+        f"/api/v1/lesson-feedbacks/{feedback['id']}/submit",
+        json={"reason": "教师已核对结构化反馈", "version": feedback["version"]},
+        headers=headers,
+    )
+    assert submitted.json()["status"] == "PENDING_REVIEW"
+    pending_edit = await client.post(
+        f"/api/v1/lesson-feedbacks/{feedback['id']}/organize",
+        json={"instructions": None, "version": submitted.json()["version"]},
+        headers=headers,
+    )
+    assert pending_edit.status_code == 409
+    approved = await client.post(
+        f"/api/v1/lesson-feedbacks/{feedback['id']}/approve",
+        json={"reason": "确认同步正式进度与掌握度", "version": submitted.json()["version"]},
+        headers=headers,
+    )
+    assert approved.status_code == 200, approved.text
+    assert approved.json()["status"] == "APPROVED"
+    assert (await client.get("/api/v1/dashboard")).json()["pending_feedback_count"] == 0
+    versions = await client.get(
+        f"/api/v1/lesson-feedbacks/{feedback['id']}/versions"
+    )
+    assert [row["status"] for row in versions.json()] == ["APPROVED", "SUPERSEDED"]
+    mastery = await client.get(f"/api/v1/student-subjects/{link['id']}/mastery")
+    assert mastery.json()[0]["knowledge_point_name"] == "综合应用"
+    assert mastery.json()[0]["level"] == "WEAK"
+    assert mastery.json()[0]["evidence_count"] == 1
+    async with factory() as session:
+        stored_item = await session.get(TeachingPlanItem, uuid.UUID(item["id"]))
+        assert stored_item is not None
+        assert stored_item.status.value == "IN_PROGRESS"
+        assert stored_item.actual_minutes == 85
+    locked = await client.post(
+        f"/api/v1/lessons/{lesson['id']}/feedback/drafts",
+        json={"student_performance": "不应覆盖正式数据"},
+        headers=headers,
+    )
+    assert locked.status_code == 409

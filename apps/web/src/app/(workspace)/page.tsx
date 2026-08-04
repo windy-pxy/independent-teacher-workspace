@@ -34,16 +34,17 @@ export default function DashboardPage() {
   const query = useQuery({ queryKey: ["dashboard"], queryFn: () => api<Dashboard>("/dashboard") });
   return (
     <>
-      <PageHeader title="仪表盘" description="今天、未来七天和当前教学进度。收费、AI 与反馈数据将在对应阶段开放。" />
+      <PageHeader title="仪表盘" description="今天、未来七天、待处理反馈和当前教学进度。收费数据将在对应阶段开放。" />
       {query.error ? <ErrorNotice error={query.error} /> : null}
       {query.isPending ? <EmptyState>正在读取仪表盘…</EmptyState> : null}
       {query.data ? (
         <div className="space-y-6">
-          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div className="card"><p className="text-sm text-[var(--muted)]">今日课程</p><p className="mt-2 text-3xl font-semibold">{query.data.today.length}</p></div>
             <div className="card"><p className="text-sm text-[var(--muted)]">未来七天</p><p className="mt-2 text-3xl font-semibold">{query.data.next_seven_days.length}</p></div>
             <div className="card"><p className="text-sm text-[var(--muted)]">本周课程</p><p className="mt-2 text-3xl font-semibold">{query.data.planned_this_week}</p></div>
             <div className="card"><p className="text-sm text-[var(--muted)]">本月已完成</p><p className="mt-2 text-3xl font-semibold">{query.data.completed_this_month}</p></div>
+            <Link className="card transition hover:border-amber-300" href="/feedback"><p className="text-sm text-[var(--muted)]">待填写/批准反馈</p><p className="mt-2 text-3xl font-semibold">{query.data.pending_feedback_count}</p></Link>
           </section>
           <section className="grid gap-6 xl:grid-cols-2">
             <div className="card"><div className="mb-4 flex justify-between"><h2 className="text-lg font-semibold">今天</h2><Link className="text-sm text-[var(--accent)]" href="/lessons">查看课表</Link></div><LessonList rows={query.data.today} /></div>

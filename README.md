@@ -1,6 +1,6 @@
 # 独立教师工作台
 
-仅供一名教师个人使用的课程与教学工作流系统。本仓库当前实现到 **Phase 2：AI 教案与 Word 导出**。课后反馈闭环、错题和收费仍属于后续阶段。
+仅供一名教师个人使用的课程与教学工作流系统。本仓库当前实现到 **Phase 3：课后反馈与进度闭环**。错题生成和收费仍属于后续阶段。
 
 ## 当前能力
 
@@ -8,17 +8,20 @@
 - 学生档案、学科和学生学科关联的创建、编辑与安全归档。
 - 长期教学计划、层级条目、结构化进度和不可变调整快照。
 - 单节课程创建、月历/列表、编辑、完成、取消、调课和补课关联。
-- 课程完成前由教师确认实际时长及需要推进的计划条目。
+- 课程完成时记录实际时长；计划进度在课后反馈批准时统一更新。
 - 今日/未来七天课程、计划进度、本周和本月课时的基础仪表盘。
 - 结构化教案草稿：教学目标、时间安排、知识讲解、例题、练习、易错点、作业、答案解析和教师注意事项独立编辑。
 - Mock/OpenAI 统一 AI 接口、集中且版本化的提示词模板、后台生成任务和局部章节重生成。
 - 教案提交审核、批准/驳回、不可变版本历史，以及仅批准版本可导出的教师版 DOCX。
+- 课后关键词快速录入、AI 结构化整理、人工修订、提交审核及不可变版本历史。
+- 反馈批准事务同步教学计划、结构化知识点掌握度证据和下次课建议；批准前不改正式数据。
+- Mock/OpenAI/DeepSeek 可替换 AI Provider；DeepSeek 适配器使用兼容 Chat Completions 的 JSON 模式。
 - DOCX 使用年级样式配置，当前提供通用小学/初中/高中视觉档案；后续可在不改变教案数据结构的情况下增加固定模板。
 - Next.js 16 Web，通过同源代理访问 FastAPI；所有按钮均连接真实 API。
 - FastAPI `/health/live` 和 `/health/ready`，统一请求 ID 与错误结构。
 - PostgreSQL + SQLAlchemy 2 + Alembic 基础迁移。
 - PostgreSQL 队列 Worker，支持领取租约、心跳接口、有限重试及 Mock 任务。
-- AI 与文件存储统一接口；OpenAI 使用 Responses API，模型名只由环境变量配置。
+- AI 与文件存储统一接口；OpenAI 使用 Responses API，DeepSeek 使用官方兼容接口，模型名均只由环境变量配置。
 - 前后端 lint、类型检查、测试、构建及 GitHub Actions。
 
 详细文档见 [docs/requirements.md](docs/requirements.md)、[docs/architecture.md](docs/architecture.md)、[docs/data-model.md](docs/data-model.md) 和 [docs/roadmap.md](docs/roadmap.md)。
@@ -134,6 +137,7 @@ cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync al
 
 - 开发默认 `AI_PROVIDER=mock`，不会调用付费模型。
 - OpenAI 密钥和模型分别由 `OPENAI_API_KEY`、`OPENAI_MODEL` 提供，只在后端/Worker 使用。
+- DeepSeek 密钥和模型分别由 `DEEPSEEK_API_KEY`、`DEEPSEEK_MODEL` 提供；密钥不要通过聊天、前端或日志传递。
 - 本地文件默认写入 `var/storage`，已被 Git 忽略。
 - 所有示例必须使用虚构学生；不要把真实学生信息、上传件、导出文档或备份放入仓库。
 - 生产部署必须启用 TLS、`SESSION_COOKIE_SECURE=true`、强随机会话密钥和独立数据库密码。
@@ -153,7 +157,7 @@ cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync al
 
 ## Phase 1 使用说明
 
-首次迁移后先创建教师账户，然后访问 <http://localhost:3000/login> 登录。推荐按“学科 → 学生 → 关联学生学科 → 教学计划 → 课程”的顺序录入。完成课程时，系统会弹出确认窗口；只有教师勾选并确认的计划条目才会改变正式进度。
+首次迁移后先创建教师账户，然后访问 <http://localhost:3000/login> 登录。推荐按“学科 → 学生 → 关联学生学科 → 教学计划 → 课程”的顺序录入。完成课程时只记录实际时长，正式计划进度由课后反馈批准事务更新。
 
 当前不支持重复课程规则。调课会保留原课程为“已调课”，并创建一节关联的新课程；取消后的课程可在新建课程时选为补课来源。
 
@@ -171,8 +175,23 @@ pnpm docx:sample
 
 输出写入被 Git 忽略的 `var/exports`。当前公式以 Unicode/纯文本形式导出，不承诺 Word 原生 OMML 公式编辑；上传教材和旧教案的检索将在后续资料模块补充。
 
+## Phase 3 使用说明
+
+完成一节课程后访问 <http://localhost:3000/feedback>，选择课程并填写少量关键词。保存后可以先人工编辑，或交给 Mock/真实模型整理；AI 结果始终是草稿，必须先提交审核，再由教师点击“批准并同步”。批准会在单个数据库事务中更新计划条目、知识点掌握度证据和反馈内的下次课建议，任一步失败都会整体回滚。
+
+开发与测试默认使用 Mock。启用 DeepSeek 时，只在服务端 `.env` 中设置：
+
+```dotenv
+AI_PROVIDER=deepseek
+DEEPSEEK_API_KEY=你的服务端密钥
+DEEPSEEK_MODEL=你在 DeepSeek 控制台确认的当前模型名
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+```
+
+然后重启 API 和 Worker。不要把真实密钥发到聊天、截图或提交到 Git；首次切换真实模型时建议只用虚构学生验证输出。Obsidian 目前不参与正式数据写入，后续可作为可选 Markdown 导出、离线查阅和备份目标。
+
 ## 下一阶段
 
-Phase 3 将实现关键词反馈、AI 结构化整理、教师审核，以及批准后在单个事务中更新课程进度、知识点掌握证据和下次课建议。Phase 2 没有提前实现错题生成或收费模块。
+Phase 4 将实现错题录入、图片识别草稿、知识点分类、错误原因、针对性练习和教师审核。Phase 3 没有提前实现错题生成或收费模块。
 
 项目的提交和推送必须遵循 [AGENTS.md](AGENTS.md) 中的“双重确认”流程。

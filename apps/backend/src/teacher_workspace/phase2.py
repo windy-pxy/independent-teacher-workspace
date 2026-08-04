@@ -51,6 +51,7 @@ from teacher_workspace.phase2_service import (
     resolve_template_version,
 )
 from teacher_workspace.prompts import lesson_plan_json_schema
+from teacher_workspace.providers.ai import configured_ai_model, real_provider_configured
 from teacher_workspace.providers.storage import LocalStorageProvider
 
 router = APIRouter(prefix="/api/v1", tags=["lesson-documents"])
@@ -138,12 +139,8 @@ async def get_ai_settings(_: UserDep) -> AISettingsResponse:
     settings = get_settings()
     return AISettingsResponse(
         provider=settings.ai_provider,
-        model=settings.openai_model,
-        real_provider_configured=bool(
-            settings.ai_provider == "openai"
-            and settings.openai_api_key
-            and settings.openai_model
-        ),
+        model=configured_ai_model(settings),
+        real_provider_configured=real_provider_configured(settings),
     )
 
 
@@ -318,7 +315,7 @@ async def generate_lesson_document(
         prompt_template_version_id=template_version.id,
         task_type="lesson_plan.generate",
         provider=get_settings().ai_provider,
-        model=get_settings().openai_model,
+        model=configured_ai_model(get_settings()),
         idempotency_key=f"lesson-plan:{document.id}:{document.version + 1}",
         input_payload={
             "document_id": str(document.id),
@@ -448,7 +445,7 @@ async def regenerate_document_section(
         prompt_template_version_id=template_version.id,
         task_type="lesson_plan.regenerate_section",
         provider=get_settings().ai_provider,
-        model=get_settings().openai_model,
+        model=configured_ai_model(get_settings()),
         idempotency_key=(
             f"lesson-plan-section:{document.id}:{document.current_version_number}:"
             f"{payload.section}:{document.version + 1}"

@@ -1,6 +1,6 @@
 # 数据库 ER 设计
 
-Phase 0 初始迁移创建 `User`、`UserSession`、`AIJob`、`AIJobAttempt`、`AuditLog`。Phase 1 新增学生、学科、计划和课程实体；Phase 2 新增 `PromptTemplate`、`PromptTemplateVersion`、`LessonDocument` 和 `DocumentVersion`，并把 AI 任务关联到教师和提示词版本。图中其余实体仍按后续阶段补充迁移。
+Phase 0 初始迁移创建 `User`、`UserSession`、`AIJob`、`AIJobAttempt`、`AuditLog`。Phase 1 新增学生、学科、计划和课程实体；Phase 2 新增提示词和教案版本实体；Phase 3 新增 `LessonFeedback`、`LessonFeedbackVersion`、`KnowledgePoint`、`StudentMastery` 和 `MasteryEvidence`。图中错题、练习、收费和上传资料仍按后续阶段补充迁移。
 
 ```mermaid
 erDiagram
@@ -61,8 +61,9 @@ erDiagram
 - `student_subject(student_id, subject_id)` 唯一。
 - `lesson(student_subject_id, scheduled_start)`、`lesson(status, scheduled_start)`。
 - `teaching_plan_item(plan_id, parent_id, sort_order)`。
-- `knowledge_point(subject_id, parent_id, normalized_name)` 受控唯一。
+- `knowledge_point(subject_id, normalized_name)` 唯一，并索引 `(subject_id, parent_id)`。
 - `student_mastery(student_subject_id, knowledge_point_id)` 唯一。
+- `lesson_feedback(lesson_id)` 唯一，`lesson_feedback_version(feedback_id, version_number)` 唯一，AI 任务引用受控唯一。
 - `wrong_question(student_subject_id, mastery_status, last_reviewed_at)`。
 - `ai_job(status, available_at, created_at)` 及唯一幂等键。
 - `lesson_document(lesson_id)`、`document_version(lesson_document_id, version_number)` 唯一；`document_version(ai_job_id)` 受控唯一。
