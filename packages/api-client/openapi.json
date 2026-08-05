@@ -123,12 +123,34 @@
           "real_provider_configured": {
             "title": "Real Provider Configured",
             "type": "boolean"
+          },
+          "real_vision_provider_configured": {
+            "title": "Real Vision Provider Configured",
+            "type": "boolean"
+          },
+          "vision_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vision Model"
+          },
+          "vision_provider": {
+            "title": "Vision Provider",
+            "type": "string"
           }
         },
         "required": [
           "provider",
           "model",
-          "real_provider_configured"
+          "real_provider_configured",
+          "vision_provider",
+          "vision_model",
+          "real_vision_provider_configured"
         ],
         "title": "AISettingsResponse",
         "type": "object"
@@ -154,6 +176,33 @@
         "title": "ArchiveRequest",
         "type": "object"
       },
+      "ArchiveWrongQuestion": {
+        "properties": {
+          "confirmation": {
+            "pattern": "^确认归档$",
+            "title": "Confirmation",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Reason",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "confirmation",
+          "reason",
+          "version"
+        ],
+        "title": "ArchiveWrongQuestion",
+        "type": "object"
+      },
       "AuthUser": {
         "properties": {
           "id": {
@@ -171,6 +220,26 @@
           "username"
         ],
         "title": "AuthUser",
+        "type": "object"
+      },
+      "Body_create_wrong_question_from_image_api_v1_wrong_questions_from_image_post": {
+        "properties": {
+          "image": {
+            "contentMediaType": "application/octet-stream",
+            "title": "Image",
+            "type": "string"
+          },
+          "student_subject_id": {
+            "format": "uuid",
+            "title": "Student Subject Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_subject_id",
+          "image"
+        ],
+        "title": "Body_create_wrong_question_from_image_api_v1_wrong_questions_from_image_post",
         "type": "object"
       },
       "DashboardProgress": {
@@ -608,6 +677,170 @@
         "title": "GenerateLessonPlanRequest",
         "type": "object"
       },
+      "GenerateQuestionSetRequest": {
+        "properties": {
+          "extra_requirements": {
+            "anyOf": [
+              {
+                "maxLength": 3000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Requirements"
+          },
+          "knowledge_point_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Knowledge Point Ids",
+            "type": "array"
+          },
+          "quantity": {
+            "default": 5,
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "student_subject_id": {
+            "format": "uuid",
+            "title": "Student Subject Id",
+            "type": "string"
+          },
+          "target_difficulty": {
+            "default": "MEDIUM",
+            "enum": [
+              "BASIC",
+              "MEDIUM",
+              "ADVANCED"
+            ],
+            "title": "Target Difficulty",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "wrong_question_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Wrong Question Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "student_subject_id",
+          "title"
+        ],
+        "title": "GenerateQuestionSetRequest",
+        "type": "object"
+      },
+      "GeneratedQuestionItem": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_markdown": {
+            "maxLength": 30000,
+            "minLength": 1,
+            "title": "Analysis Markdown",
+            "type": "string"
+          },
+          "answer_markdown": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Answer Markdown",
+            "type": "string"
+          },
+          "difficulty": {
+            "enum": [
+              "BASIC",
+              "MEDIUM",
+              "ADVANCED"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "knowledge_points": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgePointRef"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Knowledge Points",
+            "type": "array"
+          },
+          "question_key": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Question Key",
+            "type": "string"
+          },
+          "stem_markdown": {
+            "maxLength": 30000,
+            "minLength": 1,
+            "title": "Stem Markdown",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_key",
+          "stem_markdown",
+          "answer_markdown",
+          "analysis_markdown",
+          "difficulty",
+          "knowledge_points"
+        ],
+        "title": "GeneratedQuestionItem",
+        "type": "object"
+      },
+      "GeneratedQuestionSetContent": {
+        "additionalProperties": false,
+        "properties": {
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/GeneratedQuestionItem"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Questions",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "teacher_notes": {
+            "default": "",
+            "maxLength": 5000,
+            "title": "Teacher Notes",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "questions"
+        ],
+        "title": "GeneratedQuestionSetContent",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -661,6 +894,34 @@
           "service"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "KnowledgePointRef": {
+        "additionalProperties": false,
+        "properties": {
+          "knowledge_point_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Point Id"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "KnowledgePointRef",
         "type": "object"
       },
       "LessonCancel": {
@@ -2262,6 +2523,188 @@
         "title": "QuestionItem",
         "type": "object"
       },
+      "QuestionSetJobResponse": {
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/AIJobResponse"
+          },
+          "question_set": {
+            "$ref": "#/components/schemas/QuestionSetResponse"
+          }
+        },
+        "required": [
+          "question_set",
+          "job"
+        ],
+        "title": "QuestionSetJobResponse",
+        "type": "object"
+      },
+      "QuestionSetResponse": {
+        "properties": {
+          "approved_version_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Version Number"
+          },
+          "current_version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionSetVersionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_version_number": {
+            "title": "Current Version Number",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "title": "Parameters",
+            "type": "object"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "student_subject_id": {
+            "format": "uuid",
+            "title": "Student Subject Id",
+            "type": "string"
+          },
+          "subject_name": {
+            "title": "Subject Name",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "student_subject_id",
+          "student_name",
+          "subject_name",
+          "title",
+          "status",
+          "current_version_number",
+          "approved_version_number",
+          "parameters",
+          "version",
+          "current_version"
+        ],
+        "title": "QuestionSetResponse",
+        "type": "object"
+      },
+      "QuestionSetSave": {
+        "properties": {
+          "change_summary": {
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Change Summary",
+            "type": "string"
+          },
+          "content": {
+            "$ref": "#/components/schemas/GeneratedQuestionSetContent"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "content",
+          "change_summary",
+          "version"
+        ],
+        "title": "QuestionSetSave",
+        "type": "object"
+      },
+      "QuestionSetVersionResponse": {
+        "properties": {
+          "ai_job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Job Id"
+          },
+          "change_summary": {
+            "title": "Change Summary",
+            "type": "string"
+          },
+          "content": {
+            "$ref": "#/components/schemas/GeneratedQuestionSetContent"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/QuestionSetVersionSource"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "version_number": {
+            "title": "Version Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version_number",
+          "source",
+          "status",
+          "content",
+          "change_summary",
+          "ai_job_id",
+          "created_at"
+        ],
+        "title": "QuestionSetVersionResponse",
+        "type": "object"
+      },
+      "QuestionSetVersionSource": {
+        "enum": [
+          "AI_GENERATED",
+          "MANUAL_EDIT"
+        ],
+        "title": "QuestionSetVersionSource",
+        "type": "string"
+      },
       "QuickFeedbackInput": {
         "properties": {
           "actual_completed_content": {
@@ -2364,6 +2807,22 @@
         "title": "QuickFeedbackInput",
         "type": "object"
       },
+      "RecognitionJobResponse": {
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/AIJobResponse"
+          },
+          "wrong_question": {
+            "$ref": "#/components/schemas/WrongQuestionResponse"
+          }
+        },
+        "required": [
+          "wrong_question",
+          "job"
+        ],
+        "title": "RecognitionJobResponse",
+        "type": "object"
+      },
       "RegenerateSectionRequest": {
         "properties": {
           "instructions": {
@@ -2398,6 +2857,27 @@
           "version"
         ],
         "title": "RegenerateSectionRequest",
+        "type": "object"
+      },
+      "ReviewAction": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Reason",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reason",
+          "version"
+        ],
+        "title": "ReviewAction",
         "type": "object"
       },
       "ReviewActionRequest": {
@@ -3274,6 +3754,360 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "WrongQuestionContent": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis": {
+            "default": "",
+            "maxLength": 30000,
+            "title": "Analysis",
+            "type": "string"
+          },
+          "correct_answer": {
+            "default": "",
+            "maxLength": 20000,
+            "title": "Correct Answer",
+            "type": "string"
+          },
+          "difficulty": {
+            "default": "MEDIUM",
+            "enum": [
+              "BASIC",
+              "MEDIUM",
+              "ADVANCED"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "error_reason": {
+            "default": "",
+            "maxLength": 5000,
+            "title": "Error Reason",
+            "type": "string"
+          },
+          "knowledge_points": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgePointRef"
+            },
+            "maxItems": 20,
+            "title": "Knowledge Points",
+            "type": "array"
+          },
+          "question_text": {
+            "maxLength": 30000,
+            "minLength": 1,
+            "title": "Question Text",
+            "type": "string"
+          },
+          "recognition_notes": {
+            "default": "",
+            "maxLength": 3000,
+            "title": "Recognition Notes",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source": {
+            "default": "未记录",
+            "maxLength": 500,
+            "title": "Source",
+            "type": "string"
+          },
+          "student_answer": {
+            "default": "",
+            "maxLength": 20000,
+            "title": "Student Answer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_text"
+        ],
+        "title": "WrongQuestionContent",
+        "type": "object"
+      },
+      "WrongQuestionCreate": {
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/WrongQuestionContent"
+          },
+          "mastery_status": {
+            "$ref": "#/components/schemas/MasteryLevel",
+            "default": "WEAK"
+          },
+          "student_subject_id": {
+            "format": "uuid",
+            "title": "Student Subject Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_subject_id",
+          "content"
+        ],
+        "title": "WrongQuestionCreate",
+        "type": "object"
+      },
+      "WrongQuestionResponse": {
+        "properties": {
+          "approved_version_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Version Number"
+          },
+          "current_version": {
+            "$ref": "#/components/schemas/WrongQuestionVersionResponse"
+          },
+          "current_version_number": {
+            "title": "Current Version Number",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reviewed At"
+          },
+          "mastery_status": {
+            "$ref": "#/components/schemas/MasteryLevel"
+          },
+          "review_count": {
+            "title": "Review Count",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "student_subject_id": {
+            "format": "uuid",
+            "title": "Student Subject Id",
+            "type": "string"
+          },
+          "subject_name": {
+            "title": "Subject Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "student_subject_id",
+          "student_name",
+          "subject_name",
+          "status",
+          "current_version_number",
+          "approved_version_number",
+          "mastery_status",
+          "last_reviewed_at",
+          "review_count",
+          "version",
+          "current_version"
+        ],
+        "title": "WrongQuestionResponse",
+        "type": "object"
+      },
+      "WrongQuestionReviewCreate": {
+        "properties": {
+          "notes": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Notes",
+            "type": "string"
+          },
+          "result_level": {
+            "$ref": "#/components/schemas/MasteryLevel"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "result_level",
+          "notes",
+          "version"
+        ],
+        "title": "WrongQuestionReviewCreate",
+        "type": "object"
+      },
+      "WrongQuestionReviewResponse": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "string"
+          },
+          "result_level": {
+            "$ref": "#/components/schemas/MasteryLevel"
+          },
+          "reviewed_at": {
+            "format": "date-time",
+            "title": "Reviewed At",
+            "type": "string"
+          },
+          "wrong_question_id": {
+            "format": "uuid",
+            "title": "Wrong Question Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "wrong_question_id",
+          "result_level",
+          "notes",
+          "reviewed_at"
+        ],
+        "title": "WrongQuestionReviewResponse",
+        "type": "object"
+      },
+      "WrongQuestionSave": {
+        "properties": {
+          "change_summary": {
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Change Summary",
+            "type": "string"
+          },
+          "content": {
+            "$ref": "#/components/schemas/WrongQuestionContent"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "content",
+          "change_summary",
+          "version"
+        ],
+        "title": "WrongQuestionSave",
+        "type": "object"
+      },
+      "WrongQuestionVersionResponse": {
+        "properties": {
+          "ai_job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Job Id"
+          },
+          "change_summary": {
+            "title": "Change Summary",
+            "type": "string"
+          },
+          "content": {
+            "$ref": "#/components/schemas/WrongQuestionContent"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "image_material_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Material Id"
+          },
+          "source": {
+            "$ref": "#/components/schemas/WrongQuestionVersionSource"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "version_number": {
+            "title": "Version Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version_number",
+          "source",
+          "status",
+          "content",
+          "image_material_id",
+          "change_summary",
+          "ai_job_id",
+          "created_at"
+        ],
+        "title": "WrongQuestionVersionResponse",
+        "type": "object"
+      },
+      "WrongQuestionVersionSource": {
+        "enum": [
+          "MANUAL_ENTRY",
+          "AI_RECOGNIZED",
+          "MANUAL_EDIT"
+        ],
+        "title": "WrongQuestionVersionSource",
+        "type": "string"
       }
     }
   },
@@ -4814,6 +5648,380 @@
         ]
       }
     },
+    "/api/v1/question-sets": {
+      "get": {
+        "operationId": "list_question_sets_api_v1_question_sets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionSetResponse"
+                  },
+                  "title": "Response List Question Sets Api V1 Question Sets Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Question Sets",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/question-sets/generate": {
+      "post": {
+        "operationId": "generate_question_set_api_v1_question_sets_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateQuestionSetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Question Set",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}": {
+      "get": {
+        "operationId": "get_question_set_api_v1_question_sets__set_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Question Set",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      },
+      "put": {
+        "operationId": "save_question_set_api_v1_question_sets__set_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionSetSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Question Set",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}/approve": {
+      "post": {
+        "operationId": "approve_question_set_api_v1_question_sets__set_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Question Set",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}/reject": {
+      "post": {
+        "operationId": "reject_question_set_api_v1_question_sets__set_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reject Question Set",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}/submit": {
+      "post": {
+        "operationId": "submit_question_set_api_v1_question_sets__set_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Question Set",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/question-sets/{set_id}/versions": {
+      "get": {
+        "operationId": "list_question_set_versions_api_v1_question_sets__set_id__versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "set_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Set Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QuestionSetVersionResponse"
+                  },
+                  "title": "Response List Question Set Versions Api V1 Question Sets  Set Id  Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Question Set Versions",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
     "/api/v1/student-subjects": {
       "get": {
         "operationId": "list_student_subjects_api_v1_student_subjects_get",
@@ -5875,6 +7083,638 @@
         "summary": "List Plan Revisions",
         "tags": [
           "phase-1"
+        ]
+      }
+    },
+    "/api/v1/uploaded-materials/{material_id}": {
+      "get": {
+        "operationId": "download_material_api_v1_uploaded_materials__material_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "material_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Material Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Material",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/wrong-questions": {
+      "get": {
+        "operationId": "list_wrong_questions_api_v1_wrong_questions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "student_subject_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Student Subject Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WrongQuestionResponse"
+                  },
+                  "title": "Response List Wrong Questions Api V1 Wrong Questions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Wrong Questions",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      },
+      "post": {
+        "operationId": "create_wrong_question_api_v1_wrong_questions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WrongQuestionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WrongQuestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Wrong Question",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/wrong-questions/from-image": {
+      "post": {
+        "operationId": "create_wrong_question_from_image_api_v1_wrong_questions_from_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_wrong_question_from_image_api_v1_wrong_questions_from_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecognitionJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Wrong Question From Image",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/wrong-questions/{question_id}": {
+      "get": {
+        "operationId": "get_wrong_question_api_v1_wrong_questions__question_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WrongQuestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Wrong Question",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      },
+      "put": {
+        "operationId": "save_wrong_question_api_v1_wrong_questions__question_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WrongQuestionSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WrongQuestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Wrong Question",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/wrong-questions/{question_id}/approve": {
+      "post": {
+        "operationId": "approve_wrong_question_api_v1_wrong_questions__question_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WrongQuestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Wrong Question",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/wrong-questions/{question_id}/archive": {
+      "post": {
+        "operationId": "archive_wrong_question_api_v1_wrong_questions__question_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveWrongQuestion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Archive Wrong Question",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/wrong-questions/{question_id}/reject": {
+      "post": {
+        "operationId": "reject_wrong_question_api_v1_wrong_questions__question_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WrongQuestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reject Wrong Question",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/wrong-questions/{question_id}/reviews": {
+      "get": {
+        "operationId": "list_wrong_question_reviews_api_v1_wrong_questions__question_id__reviews_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WrongQuestionReviewResponse"
+                  },
+                  "title": "Response List Wrong Question Reviews Api V1 Wrong Questions  Question Id  Reviews Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Wrong Question Reviews",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      },
+      "post": {
+        "operationId": "record_wrong_question_review_api_v1_wrong_questions__question_id__reviews_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WrongQuestionReviewCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WrongQuestionReviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Wrong Question Review",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/wrong-questions/{question_id}/submit": {
+      "post": {
+        "operationId": "submit_wrong_question_api_v1_wrong_questions__question_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WrongQuestionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Wrong Question",
+        "tags": [
+          "wrong-questions",
+          "practice"
+        ]
+      }
+    },
+    "/api/v1/wrong-questions/{question_id}/versions": {
+      "get": {
+        "operationId": "list_wrong_question_versions_api_v1_wrong_questions__question_id__versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WrongQuestionVersionResponse"
+                  },
+                  "title": "Response List Wrong Question Versions Api V1 Wrong Questions  Question Id  Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Wrong Question Versions",
+        "tags": [
+          "wrong-questions",
+          "practice"
         ]
       }
     },

@@ -93,6 +93,17 @@ class MasteryLevel(StrEnum):
     MASTERED = "MASTERED"
 
 
+class WrongQuestionVersionSource(StrEnum):
+    MANUAL_ENTRY = "MANUAL_ENTRY"
+    AI_RECOGNIZED = "AI_RECOGNIZED"
+    MANUAL_EDIT = "MANUAL_EDIT"
+
+
+class QuestionSetVersionSource(StrEnum):
+    AI_GENERATED = "AI_GENERATED"
+    MANUAL_EDIT = "MANUAL_EDIT"
+
+
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (
@@ -615,3 +626,215 @@ class MasteryEvidence(Base):
         ForeignKey("users.id", ondelete="RESTRICT")
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class UploadedMaterial(Base):
+    __tablename__ = "uploaded_materials"
+    __table_args__ = (Index("ix_uploaded_materials_owner_sha", "owner_user_id", "sha256"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    student_subject_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("student_subjects.id", ondelete="CASCADE"), index=True
+    )
+    purpose: Mapped[str] = mapped_column(String(50))
+    display_name: Mapped[str] = mapped_column(String(255))
+    object_key: Mapped[str] = mapped_column(String(500), unique=True)
+    mime_type: Mapped[str] = mapped_column(String(100))
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64))
+    processing_status: Mapped[str] = mapped_column(String(30), default="READY")
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class WrongQuestion(Base):
+    __tablename__ = "wrong_questions"
+    __table_args__ = (
+        Index(
+            "ix_wrong_questions_subject_mastery_review",
+            "student_subject_id",
+            "mastery_status",
+            "last_reviewed_at",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    student_subject_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("student_subjects.id", ondelete="CASCADE"), index=True
+    )
+    status: Mapped[ReviewStatus] = mapped_column(
+        Enum(ReviewStatus, native_enum=False, length=30), default=ReviewStatus.DRAFT
+    )
+    current_version_number: Mapped[int] = mapped_column(Integer, default=1)
+    approved_version_number: Mapped[int | None] = mapped_column(Integer)
+    mastery_status: Mapped[MasteryLevel] = mapped_column(
+        Enum(MasteryLevel, native_enum=False, length=30), default=MasteryLevel.WEAK
+    )
+    last_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_count: Mapped[int] = mapped_column(Integer, default=0)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class WrongQuestionVersion(Base):
+    __tablename__ = "wrong_question_versions"
+    __table_args__ = (UniqueConstraint("wrong_question_id", "version_number"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    wrong_question_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("wrong_questions.id", ondelete="CASCADE"), index=True
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    source: Mapped[WrongQuestionVersionSource] = mapped_column(
+        Enum(WrongQuestionVersionSource, native_enum=False, length=30)
+    )
+    status: Mapped[ReviewStatus] = mapped_column(
+        Enum(ReviewStatus, native_enum=False, length=30), default=ReviewStatus.DRAFT
+    )
+    content: Mapped[dict[str, Any]] = mapped_column(JSON)
+    image_material_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("uploaded_materials.id", ondelete="SET NULL"), index=True
+    )
+    change_summary: Mapped[str] = mapped_column(String(500))
+    ai_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("ai_jobs.id", ondelete="SET NULL"), unique=True
+    )
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class WrongQuestionKnowledgePoint(Base):
+    __tablename__ = "wrong_question_knowledge_points"
+    __table_args__ = (UniqueConstraint("wrong_question_id", "knowledge_point_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    wrong_question_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("wrong_questions.id", ondelete="CASCADE"), index=True
+    )
+    knowledge_point_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("knowledge_points.id", ondelete="RESTRICT"), index=True
+    )
+
+
+class WrongQuestionReview(Base):
+    __tablename__ = "wrong_question_reviews"
+    __table_args__ = (
+        Index(
+            "ix_wrong_question_reviews_question_time",
+            "wrong_question_id",
+            "reviewed_at",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    wrong_question_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("wrong_questions.id", ondelete="CASCADE"), index=True
+    )
+    result_level: Mapped[MasteryLevel] = mapped_column(
+        Enum(MasteryLevel, native_enum=False, length=30)
+    )
+    notes: Mapped[str] = mapped_column(Text)
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+
+
+class GeneratedQuestionSet(Base):
+    __tablename__ = "generated_question_sets"
+    __table_args__ = (
+        Index("ix_generated_question_sets_subject_status", "student_subject_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    student_subject_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("student_subjects.id", ondelete="CASCADE"), index=True
+    )
+    title: Mapped[str] = mapped_column(String(300))
+    status: Mapped[ReviewStatus] = mapped_column(
+        Enum(ReviewStatus, native_enum=False, length=30), default=ReviewStatus.DRAFT
+    )
+    current_version_number: Mapped[int] = mapped_column(Integer, default=0)
+    approved_version_number: Mapped[int | None] = mapped_column(Integer)
+    parameters: Mapped[dict[str, Any]] = mapped_column(JSON)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+class GeneratedQuestionSetVersion(Base):
+    __tablename__ = "generated_question_set_versions"
+    __table_args__ = (UniqueConstraint("question_set_id", "version_number"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    question_set_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("generated_question_sets.id", ondelete="CASCADE"), index=True
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    source: Mapped[QuestionSetVersionSource] = mapped_column(
+        Enum(QuestionSetVersionSource, native_enum=False, length=30)
+    )
+    status: Mapped[ReviewStatus] = mapped_column(
+        Enum(ReviewStatus, native_enum=False, length=30), default=ReviewStatus.DRAFT
+    )
+    content: Mapped[dict[str, Any]] = mapped_column(JSON)
+    change_summary: Mapped[str] = mapped_column(String(500))
+    ai_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("ai_jobs.id", ondelete="SET NULL"), unique=True
+    )
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class GeneratedQuestion(Base):
+    __tablename__ = "generated_questions"
+    __table_args__ = (
+        UniqueConstraint("question_set_id", "approved_version_number", "question_key"),
+        Index("ix_generated_questions_set_order", "question_set_id", "sort_order"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    question_set_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("generated_question_sets.id", ondelete="CASCADE"), index=True
+    )
+    approved_version_number: Mapped[int] = mapped_column(Integer)
+    question_key: Mapped[str] = mapped_column(String(100))
+    sort_order: Mapped[int] = mapped_column(Integer)
+    stem_markdown: Mapped[str] = mapped_column(Text)
+    answer_markdown: Mapped[str] = mapped_column(Text)
+    analysis_markdown: Mapped[str] = mapped_column(Text)
+    difficulty: Mapped[str] = mapped_column(String(30))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class GeneratedQuestionKnowledgePoint(Base):
+    __tablename__ = "generated_question_knowledge_points"
+    __table_args__ = (UniqueConstraint("generated_question_id", "knowledge_point_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    generated_question_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("generated_questions.id", ondelete="CASCADE"), index=True
+    )
+    knowledge_point_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("knowledge_points.id", ondelete="RESTRICT"), index=True
+    )

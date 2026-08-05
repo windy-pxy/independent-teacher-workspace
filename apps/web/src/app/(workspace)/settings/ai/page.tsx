@@ -58,6 +58,9 @@ export default function AISettingsPage() {
             <div><dt className="text-[var(--muted)]">提供商</dt><dd className="mt-1 font-medium">{settings.data.provider}</dd></div>
             <div><dt className="text-[var(--muted)]">模型</dt><dd className="mt-1 font-medium">{settings.data.model ?? "未配置（Mock 不需要）"}</dd></div>
             <div><dt className="text-[var(--muted)]">真实调用</dt><dd className="mt-1 font-medium">{settings.data.real_provider_configured ? "已配置" : "未启用，不产生费用"}</dd></div>
+            <div><dt className="text-[var(--muted)]">视觉提供商</dt><dd className="mt-1 font-medium">{settings.data.vision_provider}</dd></div>
+            <div><dt className="text-[var(--muted)]">视觉模型</dt><dd className="mt-1 font-medium">{settings.data.vision_model ?? "未配置（Mock 不需要）"}</dd></div>
+            <div><dt className="text-[var(--muted)]">真实图片识别</dt><dd className="mt-1 font-medium">{settings.data.real_vision_provider_configured ? "已配置" : "未启用，不产生费用"}</dd></div>
           </dl>
         ) : null}
       </section>

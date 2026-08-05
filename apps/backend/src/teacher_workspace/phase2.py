@@ -51,8 +51,13 @@ from teacher_workspace.phase2_service import (
     resolve_template_version,
 )
 from teacher_workspace.prompts import lesson_plan_json_schema
-from teacher_workspace.providers.ai import configured_ai_model, real_provider_configured
-from teacher_workspace.providers.storage import LocalStorageProvider
+from teacher_workspace.providers.ai import (
+    configured_ai_model,
+    configured_vision_model,
+    real_provider_configured,
+    real_vision_provider_configured,
+)
+from teacher_workspace.providers.storage import create_storage_provider
 
 router = APIRouter(prefix="/api/v1", tags=["lesson-documents"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
@@ -141,6 +146,9 @@ async def get_ai_settings(_: UserDep) -> AISettingsResponse:
         provider=settings.ai_provider,
         model=configured_ai_model(settings),
         real_provider_configured=real_provider_configured(settings),
+        vision_provider=settings.vision_ai_provider,
+        vision_model=configured_vision_model(settings),
+        real_vision_provider_configured=real_vision_provider_configured(settings),
     )
 
 
@@ -610,7 +618,7 @@ async def export_document_docx(
     content = LessonPlanContent.model_validate(version.content)
     docx_bytes = build_lesson_plan_docx(metadata, content)
     object_key = f"documents/{user.id}/{document.id}/{version.version_number}.docx"
-    storage = LocalStorageProvider(get_settings().local_storage_root)
+    storage = create_storage_provider(get_settings())
     await storage.save(object_key, docx_bytes)
     version.docx_object_key = object_key
     await session.commit()

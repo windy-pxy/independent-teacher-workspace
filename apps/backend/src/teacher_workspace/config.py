@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     deepseek_api_key: str | None = None
     deepseek_model: str | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
+    vision_ai_provider: Literal["mock", "openai"] = "mock"
+    vision_openai_model: str | None = None
     ai_temperature: float | None = None
     ai_max_output_tokens: int = 8192
     worker_id: str = "local-worker"

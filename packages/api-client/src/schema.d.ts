@@ -517,6 +517,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/question-sets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Question Sets */
+        get: operations["list_question_sets_api_v1_question_sets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Question Set */
+        post: operations["generate_question_set_api_v1_question_sets_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Question Set */
+        get: operations["get_question_set_api_v1_question_sets__set_id__get"];
+        /** Save Question Set */
+        put: operations["save_question_set_api_v1_question_sets__set_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Question Set */
+        post: operations["approve_question_set_api_v1_question_sets__set_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Question Set */
+        post: operations["reject_question_set_api_v1_question_sets__set_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Question Set */
+        post: operations["submit_question_set_api_v1_question_sets__set_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/question-sets/{set_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Question Set Versions */
+        get: operations["list_question_set_versions_api_v1_question_sets__set_id__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/student-subjects": {
         parameters: {
             query?: never;
@@ -795,6 +915,179 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/uploaded-materials/{material_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Material */
+        get: operations["download_material_api_v1_uploaded_materials__material_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wrong-questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Wrong Questions */
+        get: operations["list_wrong_questions_api_v1_wrong_questions_get"];
+        put?: never;
+        /** Create Wrong Question */
+        post: operations["create_wrong_question_api_v1_wrong_questions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wrong-questions/from-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Wrong Question From Image */
+        post: operations["create_wrong_question_from_image_api_v1_wrong_questions_from_image_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wrong-questions/{question_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Wrong Question */
+        get: operations["get_wrong_question_api_v1_wrong_questions__question_id__get"];
+        /** Save Wrong Question */
+        put: operations["save_wrong_question_api_v1_wrong_questions__question_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wrong-questions/{question_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Wrong Question */
+        post: operations["approve_wrong_question_api_v1_wrong_questions__question_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wrong-questions/{question_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive Wrong Question */
+        post: operations["archive_wrong_question_api_v1_wrong_questions__question_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wrong-questions/{question_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Wrong Question */
+        post: operations["reject_wrong_question_api_v1_wrong_questions__question_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wrong-questions/{question_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Wrong Question Reviews */
+        get: operations["list_wrong_question_reviews_api_v1_wrong_questions__question_id__reviews_get"];
+        put?: never;
+        /** Record Wrong Question Review */
+        post: operations["record_wrong_question_review_api_v1_wrong_questions__question_id__reviews_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wrong-questions/{question_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Wrong Question */
+        post: operations["submit_wrong_question_api_v1_wrong_questions__question_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wrong-questions/{question_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Wrong Question Versions */
+        get: operations["list_wrong_question_versions_api_v1_wrong_questions__question_id__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health/live": {
         parameters: {
             query?: never;
@@ -884,9 +1177,24 @@ export interface components {
             provider: string;
             /** Real Provider Configured */
             real_provider_configured: boolean;
+            /** Real Vision Provider Configured */
+            real_vision_provider_configured: boolean;
+            /** Vision Model */
+            vision_model: string | null;
+            /** Vision Provider */
+            vision_provider: string;
         };
         /** ArchiveRequest */
         ArchiveRequest: {
+            /** Reason */
+            reason: string;
+            /** Version */
+            version: number;
+        };
+        /** ArchiveWrongQuestion */
+        ArchiveWrongQuestion: {
+            /** Confirmation */
+            confirmation: string;
             /** Reason */
             reason: string;
             /** Version */
@@ -901,6 +1209,16 @@ export interface components {
             id: string;
             /** Username */
             username: string;
+        };
+        /** Body_create_wrong_question_from_image_api_v1_wrong_questions_from_image_post */
+        Body_create_wrong_question_from_image_api_v1_wrong_questions_from_image_post: {
+            /** Image */
+            image: string;
+            /**
+             * Student Subject Id
+             * Format: uuid
+             */
+            student_subject_id: string;
         };
         /** DashboardProgress */
         DashboardProgress: {
@@ -1063,6 +1381,69 @@ export interface components {
             /** Template Id */
             template_id?: string | null;
         };
+        /** GenerateQuestionSetRequest */
+        GenerateQuestionSetRequest: {
+            /** Extra Requirements */
+            extra_requirements?: string | null;
+            /** Knowledge Point Ids */
+            knowledge_point_ids?: string[];
+            /**
+             * Quantity
+             * @default 5
+             */
+            quantity: number;
+            /**
+             * Student Subject Id
+             * Format: uuid
+             */
+            student_subject_id: string;
+            /**
+             * Target Difficulty
+             * @default MEDIUM
+             * @enum {string}
+             */
+            target_difficulty: "BASIC" | "MEDIUM" | "ADVANCED";
+            /** Title */
+            title: string;
+            /** Wrong Question Ids */
+            wrong_question_ids?: string[];
+        };
+        /** GeneratedQuestionItem */
+        GeneratedQuestionItem: {
+            /** Analysis Markdown */
+            analysis_markdown: string;
+            /** Answer Markdown */
+            answer_markdown: string;
+            /**
+             * Difficulty
+             * @enum {string}
+             */
+            difficulty: "BASIC" | "MEDIUM" | "ADVANCED";
+            /** Knowledge Points */
+            knowledge_points: components["schemas"]["KnowledgePointRef"][];
+            /** Question Key */
+            question_key: string;
+            /** Stem Markdown */
+            stem_markdown: string;
+        };
+        /** GeneratedQuestionSetContent */
+        GeneratedQuestionSetContent: {
+            /** Questions */
+            questions: components["schemas"]["GeneratedQuestionItem"][];
+            /**
+             * Schema Version
+             * @default 1.0
+             * @constant
+             */
+            schema_version: "1.0";
+            /**
+             * Teacher Notes
+             * @default
+             */
+            teacher_notes: string;
+            /** Title */
+            title: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1082,6 +1463,13 @@ export interface components {
              * @constant
              */
             status: "ok";
+        };
+        /** KnowledgePointRef */
+        KnowledgePointRef: {
+            /** Knowledge Point Id */
+            knowledge_point_id?: string | null;
+            /** Name */
+            name: string;
         };
         /** LessonCancel */
         LessonCancel: {
@@ -1651,6 +2039,77 @@ export interface components {
             /** Stem Markdown */
             stem_markdown: string;
         };
+        /** QuestionSetJobResponse */
+        QuestionSetJobResponse: {
+            job: components["schemas"]["AIJobResponse"];
+            question_set: components["schemas"]["QuestionSetResponse"];
+        };
+        /** QuestionSetResponse */
+        QuestionSetResponse: {
+            /** Approved Version Number */
+            approved_version_number: number | null;
+            current_version: components["schemas"]["QuestionSetVersionResponse"] | null;
+            /** Current Version Number */
+            current_version_number: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parameters */
+            parameters: {
+                [key: string]: unknown;
+            };
+            status: components["schemas"]["ReviewStatus"];
+            /** Student Name */
+            student_name: string;
+            /**
+             * Student Subject Id
+             * Format: uuid
+             */
+            student_subject_id: string;
+            /** Subject Name */
+            subject_name: string;
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+        };
+        /** QuestionSetSave */
+        QuestionSetSave: {
+            /** Change Summary */
+            change_summary: string;
+            content: components["schemas"]["GeneratedQuestionSetContent"];
+            /** Version */
+            version: number;
+        };
+        /** QuestionSetVersionResponse */
+        QuestionSetVersionResponse: {
+            /** Ai Job Id */
+            ai_job_id: string | null;
+            /** Change Summary */
+            change_summary: string;
+            content: components["schemas"]["GeneratedQuestionSetContent"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            source: components["schemas"]["QuestionSetVersionSource"];
+            status: components["schemas"]["ReviewStatus"];
+            /** Version Number */
+            version_number: number;
+        };
+        /**
+         * QuestionSetVersionSource
+         * @enum {string}
+         */
+        QuestionSetVersionSource: "AI_GENERATED" | "MANUAL_EDIT";
         /** QuickFeedbackInput */
         QuickFeedbackInput: {
             /** Actual Completed Content */
@@ -1670,6 +2129,11 @@ export interface components {
             /** Weak Knowledge Points */
             weak_knowledge_points?: string | null;
         };
+        /** RecognitionJobResponse */
+        RecognitionJobResponse: {
+            job: components["schemas"]["AIJobResponse"];
+            wrong_question: components["schemas"]["WrongQuestionResponse"];
+        };
         /** RegenerateSectionRequest */
         RegenerateSectionRequest: {
             /** Instructions */
@@ -1679,6 +2143,13 @@ export interface components {
              * @enum {string}
              */
             section: "objectives" | "schedule" | "knowledge_explanations" | "examples" | "in_class_exercises" | "common_mistakes" | "homework" | "teacher_notes";
+            /** Version */
+            version: number;
+        };
+        /** ReviewAction */
+        ReviewAction: {
+            /** Reason */
+            reason: string;
             /** Version */
             version: number;
         };
@@ -1917,6 +2388,164 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** WrongQuestionContent */
+        WrongQuestionContent: {
+            /**
+             * Analysis
+             * @default
+             */
+            analysis: string;
+            /**
+             * Correct Answer
+             * @default
+             */
+            correct_answer: string;
+            /**
+             * Difficulty
+             * @default MEDIUM
+             * @enum {string}
+             */
+            difficulty: "BASIC" | "MEDIUM" | "ADVANCED";
+            /**
+             * Error Reason
+             * @default
+             */
+            error_reason: string;
+            /** Knowledge Points */
+            knowledge_points?: components["schemas"]["KnowledgePointRef"][];
+            /** Question Text */
+            question_text: string;
+            /**
+             * Recognition Notes
+             * @default
+             */
+            recognition_notes: string;
+            /**
+             * Schema Version
+             * @default 1.0
+             * @constant
+             */
+            schema_version: "1.0";
+            /**
+             * Source
+             * @default 未记录
+             */
+            source: string;
+            /**
+             * Student Answer
+             * @default
+             */
+            student_answer: string;
+        };
+        /** WrongQuestionCreate */
+        WrongQuestionCreate: {
+            content: components["schemas"]["WrongQuestionContent"];
+            /** @default WEAK */
+            mastery_status: components["schemas"]["MasteryLevel"];
+            /**
+             * Student Subject Id
+             * Format: uuid
+             */
+            student_subject_id: string;
+        };
+        /** WrongQuestionResponse */
+        WrongQuestionResponse: {
+            /** Approved Version Number */
+            approved_version_number: number | null;
+            current_version: components["schemas"]["WrongQuestionVersionResponse"];
+            /** Current Version Number */
+            current_version_number: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Reviewed At */
+            last_reviewed_at: string | null;
+            mastery_status: components["schemas"]["MasteryLevel"];
+            /** Review Count */
+            review_count: number;
+            status: components["schemas"]["ReviewStatus"];
+            /** Student Name */
+            student_name: string;
+            /**
+             * Student Subject Id
+             * Format: uuid
+             */
+            student_subject_id: string;
+            /** Subject Name */
+            subject_name: string;
+            /** Version */
+            version: number;
+        };
+        /** WrongQuestionReviewCreate */
+        WrongQuestionReviewCreate: {
+            /** Notes */
+            notes: string;
+            result_level: components["schemas"]["MasteryLevel"];
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /** Version */
+            version: number;
+        };
+        /** WrongQuestionReviewResponse */
+        WrongQuestionReviewResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Notes */
+            notes: string;
+            result_level: components["schemas"]["MasteryLevel"];
+            /**
+             * Reviewed At
+             * Format: date-time
+             */
+            reviewed_at: string;
+            /**
+             * Wrong Question Id
+             * Format: uuid
+             */
+            wrong_question_id: string;
+        };
+        /** WrongQuestionSave */
+        WrongQuestionSave: {
+            /** Change Summary */
+            change_summary: string;
+            content: components["schemas"]["WrongQuestionContent"];
+            /** Version */
+            version: number;
+        };
+        /** WrongQuestionVersionResponse */
+        WrongQuestionVersionResponse: {
+            /** Ai Job Id */
+            ai_job_id: string | null;
+            /** Change Summary */
+            change_summary: string;
+            content: components["schemas"]["WrongQuestionContent"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Image Material Id */
+            image_material_id: string | null;
+            source: components["schemas"]["WrongQuestionVersionSource"];
+            status: components["schemas"]["ReviewStatus"];
+            /** Version Number */
+            version_number: number;
+        };
+        /**
+         * WrongQuestionVersionSource
+         * @enum {string}
+         */
+        WrongQuestionVersionSource: "MANUAL_ENTRY" | "AI_RECOGNIZED" | "MANUAL_EDIT";
     };
     responses: never;
     parameters: never;
@@ -2969,6 +3598,261 @@ export interface operations {
             };
         };
     };
+    list_question_sets_api_v1_question_sets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetResponse"][];
+                };
+            };
+        };
+    };
+    generate_question_set_api_v1_question_sets_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateQuestionSetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_question_set_api_v1_question_sets__set_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_question_set_api_v1_question_sets__set_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuestionSetSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_question_set_api_v1_question_sets__set_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_question_set_api_v1_question_sets__set_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_question_set_api_v1_question_sets__set_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_question_set_versions_api_v1_question_sets__set_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                set_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetVersionResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_student_subjects_api_v1_student_subjects_get: {
         parameters: {
             query?: {
@@ -3686,6 +4570,435 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanRevisionResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_material_api_v1_uploaded_materials__material_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                material_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_wrong_questions_api_v1_wrong_questions_get: {
+        parameters: {
+            query?: {
+                student_subject_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WrongQuestionResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_wrong_question_api_v1_wrong_questions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WrongQuestionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WrongQuestionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_wrong_question_from_image_api_v1_wrong_questions_from_image_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_wrong_question_from_image_api_v1_wrong_questions_from_image_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecognitionJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_wrong_question_api_v1_wrong_questions__question_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WrongQuestionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_wrong_question_api_v1_wrong_questions__question_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WrongQuestionSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WrongQuestionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_wrong_question_api_v1_wrong_questions__question_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WrongQuestionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_wrong_question_api_v1_wrong_questions__question_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArchiveWrongQuestion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_wrong_question_api_v1_wrong_questions__question_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WrongQuestionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_wrong_question_reviews_api_v1_wrong_questions__question_id__reviews_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WrongQuestionReviewResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_wrong_question_review_api_v1_wrong_questions__question_id__reviews_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WrongQuestionReviewCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WrongQuestionReviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_wrong_question_api_v1_wrong_questions__question_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WrongQuestionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_wrong_question_versions_api_v1_wrong_questions__question_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WrongQuestionVersionResponse"][];
                 };
             };
             /** @description Validation Error */

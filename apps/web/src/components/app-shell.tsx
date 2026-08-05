@@ -16,6 +16,8 @@ const navigation = [
   ["/lessons", "课程与课表"],
   ["/lesson-plans", "AI 教案"],
   ["/feedback", "课后反馈"],
+  ["/wrong-questions", "错题与复习"],
+  ["/practice", "针对性练习"],
   ["/settings/ai", "模板与 AI"],
 ] as const;
 

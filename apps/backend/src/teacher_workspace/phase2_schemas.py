@@ -130,4 +130,7 @@ class AISettingsResponse(BaseModel):
     provider: str
     model: str | None
     real_provider_configured: bool
+    vision_provider: str
+    vision_model: str | None
+    real_vision_provider_configured: bool
     development_default_is_mock: bool = True

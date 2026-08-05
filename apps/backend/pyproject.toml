@@ -12,6 +12,7 @@ dependencies = [
   "pwdlib[argon2]>=0.3,<1",
   "pydantic-settings>=2.11,<3",
   "python-docx>=1.2,<2",
+  "python-multipart>=0.0.20,<1",
   "sqlalchemy[asyncio]>=2.0.44,<3",
   "uvicorn[standard]>=0.38,<1",
 ]

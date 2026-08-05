@@ -21,7 +21,13 @@ function cookie(name: string): string | undefined {
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = (init.method ?? "GET").toUpperCase();
   const headers = new Headers(init.headers);
-  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  if (
+    init.body &&
+    !(typeof FormData !== "undefined" && init.body instanceof FormData) &&
+    !headers.has("Content-Type")
+  ) {
+    headers.set("Content-Type", "application/json");
+  }
   if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
     const csrf = cookie("teacher_workspace_session_csrf");
     if (csrf) headers.set("X-CSRF-Token", decodeURIComponent(csrf));

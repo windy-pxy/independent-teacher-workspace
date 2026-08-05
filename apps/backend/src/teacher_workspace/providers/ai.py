@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -23,7 +24,15 @@ class AIRequest:
     instructions: str | None = None
     schema: dict[str, Any] | None = None
     image_keys: tuple[str, ...] = ()
+    images: tuple[AIImageInput, ...] = ()
     context: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class AIImageInput:
+    mime_type: str
+    content: bytes
+    detail: str = "auto"
 
 
 @dataclass(frozen=True)
@@ -88,6 +97,43 @@ class MockAIProvider:
                             "level": "WEAK",
                             "evidence_note": "课堂关键词显示综合应用仍需巩固。",
                         }
+                    ],
+                }
+            elif context.get("task_type") == "wrong_question_recognition":
+                structured = {
+                    "schema_version": "1.0",
+                    "question_text": "【Mock 图片识别】计算 2x + 3 = 11，并写出解题步骤。",
+                    "source": str(context.get("source_hint") or "图片上传"),
+                    "difficulty": "BASIC",
+                    "student_answer": "x = 7",
+                    "correct_answer": "x = 4",
+                    "error_reason": "移项后符号处理错误，需教师复核。",
+                    "analysis": "先两边同时减去 3，得到 2x = 8，再两边同时除以 2。",
+                    "knowledge_points": [
+                        {"knowledge_point_id": None, "name": "一元一次方程"}
+                    ],
+                    "recognition_notes": "这是 Mock 识别草稿，未读取真实图片内容。",
+                }
+            elif context.get("task_type") == "targeted_practice":
+                quantity = int(context.get("quantity") or 5)
+                knowledge_name = str(context.get("knowledge_point_name") or "目标知识点")
+                difficulty = str(context.get("target_difficulty") or "MEDIUM")
+                structured = {
+                    "schema_version": "1.0",
+                    "title": str(context.get("title") or "Mock 针对性练习"),
+                    "teacher_notes": "Mock 生成草稿，题目、答案和解析必须由教师审核。",
+                    "questions": [
+                        {
+                            "question_key": f"mock-{index + 1}",
+                            "stem_markdown": f"围绕{knowledge_name}完成虚构练习 {index + 1}。",
+                            "answer_markdown": f"虚构答案 {index + 1}。",
+                            "analysis_markdown": "先识别考查知识点，再按规范步骤求解并检查。",
+                            "difficulty": difficulty,
+                            "knowledge_points": [
+                                {"knowledge_point_id": None, "name": knowledge_name}
+                            ],
+                        }
+                        for index in range(quantity)
                     ],
                 }
             else:
@@ -204,10 +250,25 @@ class OpenAIResponsesProvider:
                     "strict": True,
                 }
             }
+        response_input: Any = request.prompt
+        if request.images:
+            content: list[dict[str, Any]] = [
+                {"type": "input_text", "text": request.prompt}
+            ]
+            for image in request.images:
+                encoded = base64.b64encode(image.content).decode("ascii")
+                content.append(
+                    {
+                        "type": "input_image",
+                        "image_url": f"data:{image.mime_type};base64,{encoded}",
+                        "detail": image.detail,
+                    }
+                )
+            response_input = [{"role": "user", "content": content}]
         request_kwargs: dict[str, Any] = {
             "model": self.model,
             "instructions": request.instructions,
-            "input": request.prompt,
+            "input": response_input,
             "max_output_tokens": self.max_output_tokens,
             "store": False,
         }
@@ -244,6 +305,8 @@ class DeepSeekChatProvider:
         )
 
     async def generate(self, request: AIRequest) -> AIResult:
+        if request.images:
+            raise RuntimeError("DeepSeek provider does not support image input")
         schema_instruction = ""
         response_format: dict[str, str] | None = None
         if request.schema:
@@ -321,3 +384,33 @@ def create_ai_provider(settings: Settings) -> AIProvider:
             settings.ai_max_output_tokens,
         )
     raise RuntimeError(f"Unsupported AI provider: {settings.ai_provider}")
+
+
+def configured_vision_model(settings: Settings) -> str | None:
+    if settings.vision_ai_provider == "openai":
+        return settings.vision_openai_model
+    return None
+
+
+def real_vision_provider_configured(settings: Settings) -> bool:
+    return bool(
+        settings.vision_ai_provider == "openai"
+        and settings.openai_api_key
+        and settings.vision_openai_model
+    )
+
+
+def create_vision_ai_provider(settings: Settings) -> AIProvider:
+    if settings.vision_ai_provider == "mock":
+        return MockAIProvider()
+    if settings.vision_ai_provider == "openai":
+        if not settings.openai_api_key or not settings.vision_openai_model:
+            raise RuntimeError(
+                "OpenAI vision provider requires OPENAI_API_KEY and VISION_OPENAI_MODEL"
+            )
+        return OpenAIResponsesProvider(
+            settings.openai_api_key,
+            settings.vision_openai_model,
+            settings.ai_max_output_tokens,
+        )
+    raise RuntimeError(f"Unsupported vision AI provider: {settings.vision_ai_provider}")

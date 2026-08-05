@@ -1,6 +1,6 @@
 # 独立教师工作台
 
-仅供一名教师个人使用的课程与教学工作流系统。本仓库当前实现到 **Phase 3：课后反馈与进度闭环**。错题生成和收费仍属于后续阶段。
+仅供一名教师个人使用的课程与教学工作流系统。本仓库当前实现到 **Phase 4：错题与针对性练习**。收费仍属于后续阶段。
 
 ## 当前能力
 
@@ -15,6 +15,8 @@
 - 教案提交审核、批准/驳回、不可变版本历史，以及仅批准版本可导出的教师版 DOCX。
 - 课后关键词快速录入、AI 结构化整理、人工修订、提交审核及不可变版本历史。
 - 反馈批准事务同步教学计划、结构化知识点掌握度证据和下次课建议；批准前不改正式数据。
+- 文本错题、PNG/JPEG 安全上传、可替换视觉识别、人工审核、复习记录和结构化掌握状态。
+- 根据正式错题、错误原因、知识点与学生基础生成针对性练习；题目、答案和解析经教师批准后才发布。
 - Mock/OpenAI/DeepSeek 可替换 AI Provider；DeepSeek 适配器使用兼容 Chat Completions 的 JSON 模式。
 - DOCX 使用年级样式配置，当前提供通用小学/初中/高中视觉档案；后续可在不改变教案数据结构的情况下增加固定模板。
 - Next.js 16 Web，通过同源代理访问 FastAPI；所有按钮均连接真实 API。
@@ -138,6 +140,7 @@ cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync al
 - 开发默认 `AI_PROVIDER=mock`，不会调用付费模型。
 - OpenAI 密钥和模型分别由 `OPENAI_API_KEY`、`OPENAI_MODEL` 提供，只在后端/Worker 使用。
 - DeepSeek 密钥和模型分别由 `DEEPSEEK_API_KEY`、`DEEPSEEK_MODEL` 提供；密钥不要通过聊天、前端或日志传递。
+- 图片识别独立使用 `VISION_AI_PROVIDER`；默认 `mock`。当前真实视觉适配器为 OpenAI，需同时配置 `OPENAI_API_KEY` 和 `VISION_OPENAI_MODEL`；文本仍可使用 DeepSeek。
 - 本地文件默认写入 `var/storage`，已被 Git 忽略。
 - 所有示例必须使用虚构学生；不要把真实学生信息、上传件、导出文档或备份放入仓库。
 - 生产部署必须启用 TLS、`SESSION_COOKIE_SECURE=true`、强随机会话密钥和独立数据库密码。
@@ -190,8 +193,24 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com
 
 然后重启 API 和 Worker。不要把真实密钥发到聊天、截图或提交到 Git；首次切换真实模型时建议只用虚构学生验证输出。Obsidian 目前不参与正式数据写入，后续可作为可选 Markdown 导出、离线查阅和备份目标。
 
+## Phase 4 使用说明
+
+访问 <http://localhost:3000/wrong-questions> 可手工录入正式错题，或上传 PNG/JPEG 图片生成识别草稿。上传会校验扩展名、MIME、文件魔数和大小，并使用 UUID 对象键保存；识别结果必须提交审核并由教师批准，才成为正式错题。正式错题可持续记录复习结果和“未学习/薄弱/一般/熟练/已掌握”状态。
+
+访问 <http://localhost:3000/practice>，选择学生学科、正式错题、难度和题量后生成针对性练习。每道题必须包含答案与解析；生成内容可保存新版本，提交审核并批准后才发布。开发默认使用 Mock，不读取真实题图且不产生费用。
+
+若以后启用真实图片识别，只在服务端 `.env` 设置：
+
+```dotenv
+VISION_AI_PROVIDER=openai
+OPENAI_API_KEY=你的服务端密钥
+VISION_OPENAI_MODEL=你在提供商控制台确认支持图片输入的当前模型名
+```
+
+文本生成可以继续设置为 `AI_PROVIDER=deepseek`，两类任务互不绑定。完整数据和审核边界见 [docs/phase4-wrong-questions.md](docs/phase4-wrong-questions.md)。
+
 ## 下一阶段
 
-Phase 4 将实现错题录入、图片识别草稿、知识点分类、错误原因、针对性练习和教师审核。Phase 3 没有提前实现错题生成或收费模块。
+Phase 5 将实现课时、应收、实际收款分摊、欠费查询和 CSV/XLSX 报表。Phase 4 没有提前实现收费模块。
 
 项目的提交和推送必须遵循 [AGENTS.md](AGENTS.md) 中的“双重确认”流程。

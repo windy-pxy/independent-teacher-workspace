@@ -9,6 +9,10 @@ from teacher_workspace.db import dispose_engine, get_session_factory
 from teacher_workspace.models import AIJob
 from teacher_workspace.phase2_service import execute_lesson_plan_job
 from teacher_workspace.phase3_service import execute_feedback_job
+from teacher_workspace.phase4_service import (
+    execute_question_set_job,
+    execute_wrong_question_recognition_job,
+)
 from teacher_workspace.queue import claim_next_job, complete_job, fail_job
 
 logger = logging.getLogger(__name__)
@@ -29,6 +33,10 @@ async def execute_job(
         return await execute_lesson_plan_job(job, session_factory, settings)
     if job.task_type == "lesson_feedback.organize":
         return await execute_feedback_job(job, session_factory, settings)
+    if job.task_type == "wrong_question.recognize":
+        return await execute_wrong_question_recognition_job(job, session_factory, settings)
+    if job.task_type == "question_set.generate":
+        return await execute_question_set_job(job, session_factory, settings)
     return await execute_mock_job(job)
 
 

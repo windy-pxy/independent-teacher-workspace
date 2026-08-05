@@ -1,6 +1,6 @@
 # 数据库 ER 设计
 
-Phase 0 初始迁移创建 `User`、`UserSession`、`AIJob`、`AIJobAttempt`、`AuditLog`。Phase 1 新增学生、学科、计划和课程实体；Phase 2 新增提示词和教案版本实体；Phase 3 新增 `LessonFeedback`、`LessonFeedbackVersion`、`KnowledgePoint`、`StudentMastery` 和 `MasteryEvidence`。图中错题、练习、收费和上传资料仍按后续阶段补充迁移。
+Phase 0 初始迁移创建 `User`、`UserSession`、`AIJob`、`AIJobAttempt`、`AuditLog`。Phase 1 新增学生、学科、计划和课程实体；Phase 2 新增提示词和教案版本实体；Phase 3 新增反馈和掌握度；Phase 4 新增上传资料、错题/复习和练习题集的逻辑记录与不可变版本。收费仍按后续阶段补充迁移。
 
 ```mermaid
 erDiagram
@@ -18,15 +18,19 @@ erDiagram
     LESSON_FEEDBACK ||--o{ LESSON_FEEDBACK_VERSION : versions
     LESSON ||--o{ LESSON_DOCUMENT : owns
     LESSON_DOCUMENT ||--o{ DOCUMENT_VERSION : versions
+    STUDENT_SUBJECT ||--o{ WRONG_QUESTION : owns
+    WRONG_QUESTION ||--o{ WRONG_QUESTION_VERSION : versions
+    WRONG_QUESTION ||--o{ WRONG_QUESTION_REVIEW : reviews
+    WRONG_QUESTION }o--o{ KNOWLEDGE_POINT : classifies
+    UPLOADED_MATERIAL ||--o{ WRONG_QUESTION_VERSION : supplies_image
+    STUDENT_SUBJECT ||--o{ GENERATED_QUESTION_SET : owns
+    GENERATED_QUESTION_SET ||--o{ GENERATED_QUESTION_SET_VERSION : versions
+    GENERATED_QUESTION_SET ||--o{ GENERATED_QUESTION : publishes
+    GENERATED_QUESTION }o--o{ KNOWLEDGE_POINT : practices
     SUBJECT ||--o{ KNOWLEDGE_POINT : defines
     STUDENT_SUBJECT ||--o{ STUDENT_MASTERY : tracks
     KNOWLEDGE_POINT ||--o{ STUDENT_MASTERY : measured_by
     STUDENT_MASTERY ||--o{ MASTERY_EVIDENCE : supported_by
-    STUDENT_SUBJECT ||--o{ WRONG_QUESTION : records
-    WRONG_QUESTION }o--o{ KNOWLEDGE_POINT : tags
-    STUDENT_SUBJECT ||--o{ GENERATED_QUESTION_SET : receives
-    GENERATED_QUESTION_SET ||--o{ GENERATED_QUESTION : contains
-    GENERATED_QUESTION }o--o{ KNOWLEDGE_POINT : targets
     LESSON }o--o{ PAYMENT : allocated_by
     USER ||--o{ UPLOADED_MATERIAL : owns
     PROMPT_TEMPLATE ||--o{ PROMPT_TEMPLATE_VERSION : versions

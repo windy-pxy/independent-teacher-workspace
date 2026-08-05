@@ -4,6 +4,8 @@ import asyncio
 from pathlib import Path
 from typing import Protocol
 
+from teacher_workspace.config import Settings
+
 
 class StorageProvider(Protocol):
     async def save(self, object_key: str, content: bytes) -> None: ...
@@ -39,3 +41,9 @@ class LocalStorageProvider:
     async def temporary_url(self, object_key: str, expires_seconds: int = 300) -> str:
         del expires_seconds
         return self._safe_path(object_key).as_uri()
+
+
+def create_storage_provider(settings: Settings) -> StorageProvider:
+    if settings.storage_backend == "local":
+        return LocalStorageProvider(settings.local_storage_root)
+    raise RuntimeError(f"Unsupported storage backend: {settings.storage_backend}")
