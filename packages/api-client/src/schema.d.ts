@@ -89,6 +89,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/billing/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Billing Csv */
+        get: operations["export_billing_csv_api_v1_billing_export_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/export.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Billing Xlsx */
+        get: operations["export_billing_xlsx_api_v1_billing_export_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Billing Lessons */
+        get: operations["list_billing_lessons_api_v1_billing_lessons_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Billing Summary */
+        get: operations["get_billing_summary_api_v1_billing_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dashboard": {
         parameters: {
             query?: never;
@@ -465,6 +533,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lessons/{lesson_id}/pricing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Lesson Pricing */
+        put: operations["update_lesson_pricing_api_v1_lessons__lesson_id__pricing_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}/receivable-override": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Override Lesson Receivable */
+        post: operations["override_lesson_receivable_api_v1_lessons__lesson_id__receivable_override_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}/receivable-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Lesson Receivable */
+        post: operations["reset_lesson_receivable_api_v1_lessons__lesson_id__receivable_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/lessons/{lesson_id}/reschedule": {
         parameters: {
             query?: never;
@@ -476,6 +595,58 @@ export interface paths {
         put?: never;
         /** Reschedule Lesson */
         post: operations["reschedule_lesson_api_v1_lessons__lesson_id__reschedule_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Payments */
+        get: operations["list_payments_api_v1_payments_get"];
+        put?: never;
+        /** Create Payment */
+        post: operations["create_payment_api_v1_payments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/{payment_id}/allocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Payment Allocation */
+        post: operations["add_payment_allocation_api_v1_payments__payment_id__allocations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/{payment_id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Void Payment */
+        post: operations["void_payment_api_v1_payments__payment_id__void_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1210,6 +1381,39 @@ export interface components {
             /** Username */
             username: string;
         };
+        /** BillingSummaryResponse */
+        BillingSummaryResponse: {
+            /** Allocated Cents */
+            allocated_cents: number;
+            /** Completed Minutes */
+            completed_minutes: number;
+            /**
+             * Currency
+             * @default CNY
+             * @constant
+             */
+            currency: "CNY";
+            /** Lesson Count */
+            lesson_count: number;
+            /** Outstanding Cents */
+            outstanding_cents: number;
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Receivable Cents */
+            receivable_cents: number;
+            /** Received Cents */
+            received_cents: number;
+            /** Students */
+            students: components["schemas"]["StudentBillingSummary"][];
+        };
         /** Body_create_wrong_question_from_image_api_v1_wrong_questions_from_image_post */
         Body_create_wrong_question_from_image_api_v1_wrong_questions_from_image_post: {
             /** Image */
@@ -1242,6 +1446,12 @@ export interface components {
         DashboardResponse: {
             /** Completed This Month */
             completed_this_month: number;
+            /** Month Outstanding Cents */
+            month_outstanding_cents: number;
+            /** Month Receivable Cents */
+            month_receivable_cents: number;
+            /** Month Received Cents */
+            month_received_cents: number;
             /** Next Seven Days */
             next_seven_days: components["schemas"]["LessonResponse"][];
             /** Pending Feedback Count */
@@ -1471,6 +1681,55 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** LessonBillingResponse */
+        LessonBillingResponse: {
+            /** Actual Minutes */
+            actual_minutes: number | null;
+            /** Allocated Cents */
+            allocated_cents: number;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /** Lesson Status */
+            lesson_status: string;
+            /** Outstanding Cents */
+            outstanding_cents: number;
+            /**
+             * Payment Status
+             * @enum {string}
+             */
+            payment_status: "UNPAID" | "PARTIAL" | "PAID" | "OVERPAID";
+            /** Planned Minutes */
+            planned_minutes: number;
+            /** Receivable Cents */
+            receivable_cents: number;
+            /** Receivable Is Overridden */
+            receivable_is_overridden: boolean;
+            /** Receivable Override Reason */
+            receivable_override_reason: string | null;
+            /**
+             * Scheduled Start
+             * Format: date-time
+             */
+            scheduled_start: string;
+            /** Student Name */
+            student_name: string;
+            /**
+             * Student Subject Id
+             * Format: uuid
+             */
+            student_subject_id: string;
+            /** Subject Name */
+            subject_name: string;
+            /** Theme */
+            theme: string;
+            /** Unit Price Cents */
+            unit_price_cents: number;
+            /** Version */
+            version: number;
+        };
         /** LessonCancel */
         LessonCancel: {
             /** Reason */
@@ -1513,6 +1772,11 @@ export interface components {
             student_subject_id: string;
             /** Theme */
             theme: string;
+            /**
+             * Unit Price Cents
+             * @default 0
+             */
+            unit_price_cents: number;
         };
         /** LessonDocumentResponse */
         LessonDocumentResponse: {
@@ -1614,6 +1878,31 @@ export interface components {
             /** Teacher Notes */
             teacher_notes: string[];
         };
+        /** LessonPricingUpdate */
+        LessonPricingUpdate: {
+            /** Reason */
+            reason: string;
+            /** Unit Price Cents */
+            unit_price_cents: number;
+            /** Version */
+            version: number;
+        };
+        /** LessonReceivableOverride */
+        LessonReceivableOverride: {
+            /** Reason */
+            reason: string;
+            /** Receivable Cents */
+            receivable_cents: number;
+            /** Version */
+            version: number;
+        };
+        /** LessonReceivableReset */
+        LessonReceivableReset: {
+            /** Reason */
+            reason: string;
+            /** Version */
+            version: number;
+        };
         /** LessonReschedule */
         LessonReschedule: {
             /** Planned Minutes */
@@ -1646,6 +1935,10 @@ export interface components {
             plan_item_ids: string[];
             /** Planned Minutes */
             planned_minutes: number;
+            /** Receivable Cents */
+            receivable_cents: number;
+            /** Receivable Is Overridden */
+            receivable_is_overridden: boolean;
             /** Rescheduled From Lesson Id */
             rescheduled_from_lesson_id: string | null;
             /**
@@ -1667,6 +1960,8 @@ export interface components {
             subject_name: string;
             /** Theme */
             theme: string;
+            /** Unit Price Cents */
+            unit_price_cents: number;
             /** Version */
             version: number;
         };
@@ -1696,6 +1991,8 @@ export interface components {
             special_requirements?: string | null;
             /** Theme */
             theme: string;
+            /** Unit Price Cents */
+            unit_price_cents?: number | null;
             /** Version */
             version: number;
         };
@@ -1752,6 +2049,117 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /** Version */
+            version: number;
+        };
+        /** PaymentAllocationCreate */
+        PaymentAllocationCreate: {
+            /** Amount Cents */
+            amount_cents: number;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /** Version */
+            version: number;
+        };
+        /** PaymentAllocationInput */
+        PaymentAllocationInput: {
+            /** Amount Cents */
+            amount_cents: number;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+        };
+        /** PaymentAllocationResponse */
+        PaymentAllocationResponse: {
+            /** Amount Cents */
+            amount_cents: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+        };
+        /** PaymentCreate */
+        PaymentCreate: {
+            /** Allocations */
+            allocations?: components["schemas"]["PaymentAllocationInput"][];
+            /** Amount Cents */
+            amount_cents: number;
+            /** Method */
+            method: string;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Paid At
+             * Format: date-time
+             */
+            paid_at: string;
+            /** Reference */
+            reference?: string | null;
+        };
+        /** PaymentResponse */
+        PaymentResponse: {
+            /** Allocated Cents */
+            allocated_cents: number;
+            /** Allocations */
+            allocations: components["schemas"]["PaymentAllocationResponse"][];
+            /** Amount Cents */
+            amount_cents: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Currency
+             * @default CNY
+             * @constant
+             */
+            currency: "CNY";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Method */
+            method: string;
+            /** Notes */
+            notes: string | null;
+            /**
+             * Paid At
+             * Format: date-time
+             */
+            paid_at: string;
+            /** Reference */
+            reference: string | null;
+            /** Unallocated Cents */
+            unallocated_cents: number;
+            /** Version */
+            version: number;
+            /** Void Reason */
+            void_reason: string | null;
+            /** Voided At */
+            voided_at: string | null;
+        };
+        /** PaymentVoid */
+        PaymentVoid: {
+            /** Reason */
+            reason: string;
             /** Version */
             version: number;
         };
@@ -2172,6 +2580,26 @@ export interface components {
             content: components["schemas"]["LessonPlanContent"];
             /** Version */
             version: number;
+        };
+        /** StudentBillingSummary */
+        StudentBillingSummary: {
+            /** Allocated Cents */
+            allocated_cents: number;
+            /** Completed Minutes */
+            completed_minutes: number;
+            /** Lesson Count */
+            lesson_count: number;
+            /** Outstanding Cents */
+            outstanding_cents: number;
+            /** Receivable Cents */
+            receivable_cents: number;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
         };
         /** StudentCreate */
         StudentCreate: {
@@ -2673,6 +3101,136 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuthUser"];
+                };
+            };
+        };
+    };
+    export_billing_csv_api_v1_billing_export_csv_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_billing_xlsx_api_v1_billing_export_xlsx_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_billing_lessons_api_v1_billing_lessons_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                student_subject_id?: string | null;
+                payment_status?: ("UNPAID" | "PARTIAL" | "PAID" | "OVERPAID") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonBillingResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_billing_summary_api_v1_billing_summary_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingSummaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3475,6 +4033,111 @@ export interface operations {
             };
         };
     };
+    update_lesson_pricing_api_v1_lessons__lesson_id__pricing_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LessonPricingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    override_lesson_receivable_api_v1_lessons__lesson_id__receivable_override_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LessonReceivableOverride"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_lesson_receivable_api_v1_lessons__lesson_id__receivable_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LessonReceivableReset"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reschedule_lesson_api_v1_lessons__lesson_id__reschedule_post: {
         parameters: {
             query?: never;
@@ -3497,6 +4160,142 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LessonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_payments_api_v1_payments_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                include_voided?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_payment_api_v1_payments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_payment_allocation_api_v1_payments__payment_id__allocations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentAllocationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    void_payment_api_v1_payments__payment_id__void_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentVoid"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponse"];
                 };
             };
             /** @description Validation Error */

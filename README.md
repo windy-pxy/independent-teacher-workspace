@@ -154,7 +154,7 @@ cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync al
 - **3000/8000/5432 端口冲突**：修改 `.env` 中 Web/API 端口；数据库端口如需修改也应同步更新 `DATABASE_URL`。
 - **Docker Desktop 未启动**：先启动 Docker Desktop，等待引擎就绪后再运行 Compose。
 - **Docker 报 WSL/Virtual Machine Platform 未启用**：以管理员身份运行 `wsl --install --no-distribution`，重启 Windows 后重新启动 Docker Desktop。
-- **仓库路径包含中文且 BuildKit 报 sharedkey/non-printable ASCII**：临时把仓库映射到纯 ASCII 盘符后构建，例如 `subst W: (Resolve-Path .).Path`，在 `W:\` 运行 `docker compose build`，完成后执行 `subst W: /D`。不要在盘符已被占用时覆盖映射。
+- **仓库路径包含中文且 BuildKit 报 sharedkey/non-printable ASCII**：优先临时执行 `subst W: (Resolve-Path .).Path`，到 `W:\` 运行 `docker compose up --build -d`，再回到原目录执行 `subst W: /D`；须先确认 `W:` 未被占用。当前 Docker Desktop 也可用 `$env:DOCKER_BUILDKIT='0'; docker compose build` 后接 `docker compose up -d` 兼容构建。两种方式均不删除或迁移数据库卷。
 - **Docker Hub 需要本机代理**：Docker CLI 使用 Windows 地址（如 `HTTP_PROXY=http://127.0.0.1:<端口>`）；构建容器通过 `.env` 中的 `DOCKER_BUILD_HTTP_PROXY=http://host.docker.internal:<端口>` 和对应 HTTPS 变量访问同一代理。不要把包含认证信息的代理 URL 提交到 Git。
 - **OpenAPI 类型变化**：运行 `pnpm api:generate` 并提交生成的 JSON 和 TypeScript 类型。
 
@@ -209,8 +209,14 @@ VISION_OPENAI_MODEL=你在提供商控制台确认支持图片输入的当前模
 
 文本生成可以继续设置为 `AI_PROVIDER=deepseek`，两类任务互不绑定。完整数据和审核边界见 [docs/phase4-wrong-questions.md](docs/phase4-wrong-questions.md)。
 
+## Phase 5 使用说明
+
+创建或编辑课程时设置每小时单价。计划中课程按计划分钟显示预计应收，课程完成后按实际分钟重新计算。访问 <http://localhost:3000/billing> 可以按周或按月查看课时、应收、实际到账和欠费，记录一次真实收款并把它分摊到一节或多节课程；同一课程也允许分多次收款。
+
+人工覆盖应收必须填写原因。误录的收款不会硬删除，需要填写理由作废；对应分摊会从有效到账中排除。页面可直接导出 UTF-8 CSV 或 XLSX，导出文本已防止电子表格公式注入。完整规则见 [docs/phase5-billing.md](docs/phase5-billing.md)。
+
 ## 下一阶段
 
-Phase 5 将实现课时、应收、实际收款分摊、欠费查询和 CSV/XLSX 报表。Phase 4 没有提前实现收费模块。
+Phase 6 将完善私有部署、TLS、数据库和文件备份恢复、日志与上传安全、性能检查及最终端到端验收。Phase 5 完成后不会自动进入 Phase 6，需先完成本地体验与验收。
 
 项目的提交和推送必须遵循 [AGENTS.md](AGENTS.md) 中的“双重确认”流程。

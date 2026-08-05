@@ -18,6 +18,7 @@ from teacher_workspace.models import (
     LessonFeedback,
     LessonPlanItem,
     LessonStatus,
+    Payment,
     PlanItemStatus,
     Student,
     StudentSubject,
@@ -55,6 +56,7 @@ from teacher_workspace.phase1_schemas import (
     SubjectResponse,
     SubjectUpdate,
 )
+from teacher_workspace.phase5_service import billing_rows, refresh_lesson_receivable
 
 router = APIRouter(prefix="/api/v1", tags=["phase-1"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
@@ -340,6 +342,9 @@ async def lesson_response(session: AsyncSession, entity: Lesson) -> LessonRespon
         scheduled_start=entity.scheduled_start,
         planned_minutes=entity.planned_minutes,
         actual_minutes=entity.actual_minutes,
+        unit_price_cents=entity.unit_price_cents,
+        receivable_cents=entity.receivable_cents,
+        receivable_is_overridden=entity.receivable_is_overridden,
         lesson_type=entity.lesson_type,
         theme=entity.theme,
         special_requirements=entity.special_requirements,
@@ -965,11 +970,13 @@ async def create_lesson(
         student_subject_id=payload.student_subject_id,
         scheduled_start=payload.scheduled_start.astimezone(UTC),
         planned_minutes=payload.planned_minutes,
+        unit_price_cents=payload.unit_price_cents,
         lesson_type=payload.lesson_type,
         theme=payload.theme.strip(),
         special_requirements=clean(payload.special_requirements),
         makeup_for_lesson_id=payload.makeup_for_lesson_id,
     )
+    refresh_lesson_receivable(entity)
     session.add(entity)
     await session.flush()
     session.add_all(
@@ -1015,6 +1022,9 @@ async def update_lesson(
     )
     entity.scheduled_start = payload.scheduled_start.astimezone(UTC)
     entity.planned_minutes = payload.planned_minutes
+    if payload.unit_price_cents is not None:
+        entity.unit_price_cents = payload.unit_price_cents
+    refresh_lesson_receivable(entity)
     entity.lesson_type = payload.lesson_type
     entity.theme = payload.theme.strip()
     entity.special_requirements = clean(payload.special_requirements)
@@ -1065,6 +1075,7 @@ async def complete_lesson(
     entity.status = LessonStatus.COMPLETED
     entity.actual_minutes = payload.actual_minutes
     entity.completed_at = utc_now()
+    refresh_lesson_receivable(entity)
     entity.version += 1
     await session.flush()
     for plan_id in changed_plans:
@@ -1100,6 +1111,9 @@ async def cancel_lesson(
         raise problem("INVALID_LESSON_TRANSITION", "只有计划中的课程可以取消", 409)
     entity.status = LessonStatus.CANCELED
     entity.cancellation_reason = payload.reason.strip()
+    entity.receivable_is_overridden = False
+    entity.receivable_override_reason = None
+    refresh_lesson_receivable(entity)
     entity.version += 1
     audit(
         session, request, user, "LESSON_CANCELED", "Lesson", entity.id, {"reason": payload.reason}
@@ -1132,6 +1146,7 @@ async def reschedule_lesson(
         student_subject_id=original.student_subject_id,
         scheduled_start=payload.scheduled_start.astimezone(UTC),
         planned_minutes=payload.planned_minutes or original.planned_minutes,
+        unit_price_cents=original.unit_price_cents,
         lesson_type=original.lesson_type,
         theme=original.theme,
         special_requirements=original.special_requirements,
@@ -1140,8 +1155,12 @@ async def reschedule_lesson(
     session.add(replacement)
     original.status = LessonStatus.RESCHEDULED
     original.cancellation_reason = payload.reason.strip()
+    original.receivable_is_overridden = False
+    original.receivable_override_reason = None
+    refresh_lesson_receivable(original)
     original.version += 1
     await session.flush()
+    refresh_lesson_receivable(replacement)
     session.add_all(
         [
             LessonPlanItem(lesson_id=replacement.id, plan_item_id=item_id)
@@ -1178,6 +1197,13 @@ async def dashboard(
     week_start = day_start - timedelta(days=day_start_local.weekday())
     month_start_local = day_start_local.replace(day=1)
     month_start = (month_start_local - timedelta(hours=8)).replace(tzinfo=UTC)
+    if month_start_local.month == 12:
+        month_end_local = month_start_local.replace(
+            year=month_start_local.year + 1, month=1
+        )
+    else:
+        month_end_local = month_start_local.replace(month=month_start_local.month + 1)
+    month_end = (month_end_local - timedelta(hours=8)).replace(tzinfo=UTC)
 
     base = (
         select(Lesson)
@@ -1289,6 +1315,24 @@ async def dashboard(
                     percent=round(completed * 100 / total) if total else 0,
                 )
             )
+    month_billing_rows = await billing_rows(session, user.id, month_start, month_end)
+    month_active_billing = [
+        row.response
+        for row in month_billing_rows
+        if row.response.lesson_status
+        not in {LessonStatus.CANCELED.value, LessonStatus.RESCHEDULED.value}
+    ]
+    month_received_cents = int(
+        await session.scalar(
+            select(func.coalesce(func.sum(Payment.amount_cents), 0)).where(
+                Payment.owner_user_id == user.id,
+                Payment.paid_at >= month_start,
+                Payment.paid_at < month_end,
+                Payment.voided_at.is_(None),
+            )
+        )
+        or 0
+    )
     return DashboardResponse(
         today=[await lesson_response(session, row) for row in today_rows],
         next_seven_days=[await lesson_response(session, row) for row in next_rows],
@@ -1296,4 +1340,11 @@ async def dashboard(
         planned_this_week=planned_this_week,
         completed_this_month=completed_this_month,
         pending_feedback_count=pending_feedback_count,
+        month_receivable_cents=sum(
+            row.receivable_cents for row in month_active_billing
+        ),
+        month_received_cents=month_received_cents,
+        month_outstanding_cents=sum(
+            row.outstanding_cents for row in month_active_billing
+        ),
     )

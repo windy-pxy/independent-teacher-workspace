@@ -170,6 +170,7 @@ class LessonCreate(BaseModel):
     student_subject_id: UUID
     scheduled_start: datetime
     planned_minutes: int = Field(ge=15, le=720)
+    unit_price_cents: int = Field(default=0, ge=0, le=100_000_000)
     lesson_type: LessonType
     theme: str = Field(min_length=1, max_length=300)
     special_requirements: str | None = Field(default=None, max_length=5000)
@@ -186,6 +187,7 @@ class LessonCreate(BaseModel):
 class LessonUpdate(BaseModel):
     scheduled_start: datetime
     planned_minutes: int = Field(ge=15, le=720)
+    unit_price_cents: int | None = Field(default=None, ge=0, le=100_000_000)
     lesson_type: LessonType
     theme: str = Field(min_length=1, max_length=300)
     special_requirements: str | None = Field(default=None, max_length=5000)
@@ -238,6 +240,9 @@ class LessonResponse(BaseModel):
     scheduled_start: datetime
     planned_minutes: int
     actual_minutes: int | None
+    unit_price_cents: int
+    receivable_cents: int
+    receivable_is_overridden: bool
     lesson_type: LessonType
     theme: str
     special_requirements: str | None
@@ -265,4 +270,7 @@ class DashboardResponse(BaseModel):
     planned_this_week: int
     completed_this_month: int
     pending_feedback_count: int
+    month_receivable_cents: int
+    month_received_cents: int
+    month_outstanding_cents: int
     timezone: Literal["Asia/Shanghai"] = "Asia/Shanghai"

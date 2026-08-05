@@ -15,6 +15,7 @@ const formatter = new Intl.DateTimeFormat("zh-CN", {
   hour: "2-digit",
   minute: "2-digit",
 });
+const money = new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY" });
 
 function LessonList({ rows }: { rows: Lesson[] }) {
   if (!rows.length) return <p className="text-sm text-[var(--muted)]">暂无课程</p>;
@@ -34,7 +35,7 @@ export default function DashboardPage() {
   const query = useQuery({ queryKey: ["dashboard"], queryFn: () => api<Dashboard>("/dashboard") });
   return (
     <>
-      <PageHeader title="仪表盘" description="今天、未来七天、待处理反馈和当前教学进度。收费数据将在对应阶段开放。" />
+      <PageHeader title="仪表盘" description="今天、未来七天、待处理反馈、教学进度和本月收费概览。" />
       {query.error ? <ErrorNotice error={query.error} /> : null}
       {query.isPending ? <EmptyState>正在读取仪表盘…</EmptyState> : null}
       {query.data ? (
@@ -45,6 +46,11 @@ export default function DashboardPage() {
             <div className="card"><p className="text-sm text-[var(--muted)]">本周课程</p><p className="mt-2 text-3xl font-semibold">{query.data.planned_this_week}</p></div>
             <div className="card"><p className="text-sm text-[var(--muted)]">本月已完成</p><p className="mt-2 text-3xl font-semibold">{query.data.completed_this_month}</p></div>
             <Link className="card transition hover:border-amber-300" href="/feedback"><p className="text-sm text-[var(--muted)]">待填写/批准反馈</p><p className="mt-2 text-3xl font-semibold">{query.data.pending_feedback_count}</p></Link>
+          </section>
+          <section className="grid gap-4 sm:grid-cols-3">
+            <Link className="card transition hover:border-emerald-300" href="/billing"><p className="text-sm text-[var(--muted)]">本月应收</p><p className="mt-2 text-2xl font-semibold">{money.format(query.data.month_receivable_cents / 100)}</p></Link>
+            <Link className="card transition hover:border-emerald-300" href="/billing"><p className="text-sm text-[var(--muted)]">本月实际到账</p><p className="mt-2 text-2xl font-semibold">{money.format(query.data.month_received_cents / 100)}</p></Link>
+            <Link className="card transition hover:border-amber-300" href="/billing"><p className="text-sm text-[var(--muted)]">本月尚未收取</p><p className="mt-2 text-2xl font-semibold text-amber-700">{money.format(query.data.month_outstanding_cents / 100)}</p></Link>
           </section>
           <section className="grid gap-6 xl:grid-cols-2">
             <div className="card"><div className="mb-4 flex justify-between"><h2 className="text-lg font-semibold">今天</h2><Link className="text-sm text-[var(--accent)]" href="/lessons">查看课表</Link></div><LessonList rows={query.data.today} /></div>

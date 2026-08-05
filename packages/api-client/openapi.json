@@ -222,6 +222,70 @@
         "title": "AuthUser",
         "type": "object"
       },
+      "BillingSummaryResponse": {
+        "properties": {
+          "allocated_cents": {
+            "title": "Allocated Cents",
+            "type": "integer"
+          },
+          "completed_minutes": {
+            "title": "Completed Minutes",
+            "type": "integer"
+          },
+          "currency": {
+            "const": "CNY",
+            "default": "CNY",
+            "title": "Currency",
+            "type": "string"
+          },
+          "lesson_count": {
+            "title": "Lesson Count",
+            "type": "integer"
+          },
+          "outstanding_cents": {
+            "title": "Outstanding Cents",
+            "type": "integer"
+          },
+          "period_end": {
+            "format": "date-time",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date-time",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "receivable_cents": {
+            "title": "Receivable Cents",
+            "type": "integer"
+          },
+          "received_cents": {
+            "title": "Received Cents",
+            "type": "integer"
+          },
+          "students": {
+            "items": {
+              "$ref": "#/components/schemas/StudentBillingSummary"
+            },
+            "title": "Students",
+            "type": "array"
+          }
+        },
+        "required": [
+          "period_start",
+          "period_end",
+          "lesson_count",
+          "completed_minutes",
+          "receivable_cents",
+          "allocated_cents",
+          "outstanding_cents",
+          "received_cents",
+          "students"
+        ],
+        "title": "BillingSummaryResponse",
+        "type": "object"
+      },
       "Body_create_wrong_question_from_image_api_v1_wrong_questions_from_image_post": {
         "properties": {
           "image": {
@@ -287,6 +351,18 @@
             "title": "Completed This Month",
             "type": "integer"
           },
+          "month_outstanding_cents": {
+            "title": "Month Outstanding Cents",
+            "type": "integer"
+          },
+          "month_receivable_cents": {
+            "title": "Month Receivable Cents",
+            "type": "integer"
+          },
+          "month_received_cents": {
+            "title": "Month Received Cents",
+            "type": "integer"
+          },
           "next_seven_days": {
             "items": {
               "$ref": "#/components/schemas/LessonResponse"
@@ -329,7 +405,10 @@
           "progress",
           "planned_this_week",
           "completed_this_month",
-          "pending_feedback_count"
+          "pending_feedback_count",
+          "month_receivable_cents",
+          "month_received_cents",
+          "month_outstanding_cents"
         ],
         "title": "DashboardResponse",
         "type": "object"
@@ -924,6 +1003,122 @@
         "title": "KnowledgePointRef",
         "type": "object"
       },
+      "LessonBillingResponse": {
+        "properties": {
+          "actual_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Minutes"
+          },
+          "allocated_cents": {
+            "title": "Allocated Cents",
+            "type": "integer"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "lesson_status": {
+            "title": "Lesson Status",
+            "type": "string"
+          },
+          "outstanding_cents": {
+            "title": "Outstanding Cents",
+            "type": "integer"
+          },
+          "payment_status": {
+            "enum": [
+              "UNPAID",
+              "PARTIAL",
+              "PAID",
+              "OVERPAID"
+            ],
+            "title": "Payment Status",
+            "type": "string"
+          },
+          "planned_minutes": {
+            "title": "Planned Minutes",
+            "type": "integer"
+          },
+          "receivable_cents": {
+            "title": "Receivable Cents",
+            "type": "integer"
+          },
+          "receivable_is_overridden": {
+            "title": "Receivable Is Overridden",
+            "type": "boolean"
+          },
+          "receivable_override_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receivable Override Reason"
+          },
+          "scheduled_start": {
+            "format": "date-time",
+            "title": "Scheduled Start",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          },
+          "student_subject_id": {
+            "format": "uuid",
+            "title": "Student Subject Id",
+            "type": "string"
+          },
+          "subject_name": {
+            "title": "Subject Name",
+            "type": "string"
+          },
+          "theme": {
+            "title": "Theme",
+            "type": "string"
+          },
+          "unit_price_cents": {
+            "title": "Unit Price Cents",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "lesson_id",
+          "student_subject_id",
+          "student_name",
+          "subject_name",
+          "scheduled_start",
+          "lesson_status",
+          "theme",
+          "planned_minutes",
+          "actual_minutes",
+          "unit_price_cents",
+          "receivable_cents",
+          "receivable_is_overridden",
+          "receivable_override_reason",
+          "allocated_cents",
+          "outstanding_cents",
+          "payment_status",
+          "version"
+        ],
+        "title": "LessonBillingResponse",
+        "type": "object"
+      },
       "LessonCancel": {
         "properties": {
           "reason": {
@@ -1034,6 +1229,13 @@
             "minLength": 1,
             "title": "Theme",
             "type": "string"
+          },
+          "unit_price_cents": {
+            "default": 0,
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Unit Price Cents",
+            "type": "integer"
           }
         },
         "required": [
@@ -1354,6 +1556,83 @@
         "title": "LessonPlanContent",
         "type": "object"
       },
+      "LessonPricingUpdate": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Reason",
+            "type": "string"
+          },
+          "unit_price_cents": {
+            "maximum": 100000000.0,
+            "minimum": 0.0,
+            "title": "Unit Price Cents",
+            "type": "integer"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit_price_cents",
+          "reason",
+          "version"
+        ],
+        "title": "LessonPricingUpdate",
+        "type": "object"
+      },
+      "LessonReceivableOverride": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Reason",
+            "type": "string"
+          },
+          "receivable_cents": {
+            "maximum": 10000000000.0,
+            "minimum": 0.0,
+            "title": "Receivable Cents",
+            "type": "integer"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "receivable_cents",
+          "reason",
+          "version"
+        ],
+        "title": "LessonReceivableOverride",
+        "type": "object"
+      },
+      "LessonReceivableReset": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Reason",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reason",
+          "version"
+        ],
+        "title": "LessonReceivableReset",
+        "type": "object"
+      },
       "LessonReschedule": {
         "properties": {
           "planned_minutes": {
@@ -1450,6 +1729,14 @@
             "title": "Planned Minutes",
             "type": "integer"
           },
+          "receivable_cents": {
+            "title": "Receivable Cents",
+            "type": "integer"
+          },
+          "receivable_is_overridden": {
+            "title": "Receivable Is Overridden",
+            "type": "boolean"
+          },
           "rescheduled_from_lesson_id": {
             "anyOf": [
               {
@@ -1498,6 +1785,10 @@
             "title": "Theme",
             "type": "string"
           },
+          "unit_price_cents": {
+            "title": "Unit Price Cents",
+            "type": "integer"
+          },
           "version": {
             "title": "Version",
             "type": "integer"
@@ -1511,6 +1802,9 @@
           "scheduled_start",
           "planned_minutes",
           "actual_minutes",
+          "unit_price_cents",
+          "receivable_cents",
+          "receivable_is_overridden",
           "lesson_type",
           "theme",
           "special_requirements",
@@ -1587,6 +1881,19 @@
             "minLength": 1,
             "title": "Theme",
             "type": "string"
+          },
+          "unit_price_cents": {
+            "anyOf": [
+              {
+                "maximum": 100000000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Price Cents"
           },
           "version": {
             "minimum": 1.0,
@@ -1738,6 +2045,280 @@
           "evidence_count"
         ],
         "title": "MasteryResponse",
+        "type": "object"
+      },
+      "PaymentAllocationCreate": {
+        "properties": {
+          "amount_cents": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 10000000000.0,
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "lesson_id",
+          "amount_cents",
+          "version"
+        ],
+        "title": "PaymentAllocationCreate",
+        "type": "object"
+      },
+      "PaymentAllocationInput": {
+        "properties": {
+          "amount_cents": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 10000000000.0,
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lesson_id",
+          "amount_cents"
+        ],
+        "title": "PaymentAllocationInput",
+        "type": "object"
+      },
+      "PaymentAllocationResponse": {
+        "properties": {
+          "amount_cents": {
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lesson_id": {
+            "format": "uuid",
+            "title": "Lesson Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "lesson_id",
+          "amount_cents",
+          "created_at"
+        ],
+        "title": "PaymentAllocationResponse",
+        "type": "object"
+      },
+      "PaymentCreate": {
+        "properties": {
+          "allocations": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentAllocationInput"
+            },
+            "maxItems": 200,
+            "title": "Allocations",
+            "type": "array"
+          },
+          "amount_cents": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 10000000000.0,
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "method": {
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Method",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "paid_at": {
+            "format": "date-time",
+            "title": "Paid At",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          }
+        },
+        "required": [
+          "amount_cents",
+          "paid_at",
+          "method"
+        ],
+        "title": "PaymentCreate",
+        "type": "object"
+      },
+      "PaymentResponse": {
+        "properties": {
+          "allocated_cents": {
+            "title": "Allocated Cents",
+            "type": "integer"
+          },
+          "allocations": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentAllocationResponse"
+            },
+            "title": "Allocations",
+            "type": "array"
+          },
+          "amount_cents": {
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "const": "CNY",
+            "default": "CNY",
+            "title": "Currency",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "paid_at": {
+            "format": "date-time",
+            "title": "Paid At",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "unallocated_cents": {
+            "title": "Unallocated Cents",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "void_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Void Reason"
+          },
+          "voided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voided At"
+          }
+        },
+        "required": [
+          "id",
+          "amount_cents",
+          "paid_at",
+          "method",
+          "reference",
+          "notes",
+          "voided_at",
+          "void_reason",
+          "allocated_cents",
+          "unallocated_cents",
+          "allocations",
+          "version",
+          "created_at"
+        ],
+        "title": "PaymentResponse",
+        "type": "object"
+      },
+      "PaymentVoid": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 2,
+            "title": "Reason",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reason",
+          "version"
+        ],
+        "title": "PaymentVoid",
         "type": "object"
       },
       "PlanCreate": {
@@ -2935,6 +3516,50 @@
           "version"
         ],
         "title": "SaveDocumentRequest",
+        "type": "object"
+      },
+      "StudentBillingSummary": {
+        "properties": {
+          "allocated_cents": {
+            "title": "Allocated Cents",
+            "type": "integer"
+          },
+          "completed_minutes": {
+            "title": "Completed Minutes",
+            "type": "integer"
+          },
+          "lesson_count": {
+            "title": "Lesson Count",
+            "type": "integer"
+          },
+          "outstanding_cents": {
+            "title": "Outstanding Cents",
+            "type": "integer"
+          },
+          "receivable_cents": {
+            "title": "Receivable Cents",
+            "type": "integer"
+          },
+          "student_id": {
+            "format": "uuid",
+            "title": "Student Id",
+            "type": "string"
+          },
+          "student_name": {
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "student_id",
+          "student_name",
+          "lesson_count",
+          "completed_minutes",
+          "receivable_cents",
+          "allocated_cents",
+          "outstanding_cents"
+        ],
+        "title": "StudentBillingSummary",
         "type": "object"
       },
       "StudentCreate": {
@@ -4257,6 +4882,313 @@
         ]
       }
     },
+    "/api/v1/billing/export.csv": {
+      "get": {
+        "operationId": "export_billing_csv_api_v1_billing_export_csv_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Billing Csv",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/v1/billing/export.xlsx": {
+      "get": {
+        "operationId": "export_billing_xlsx_api_v1_billing_export_xlsx_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Billing Xlsx",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/v1/billing/lessons": {
+      "get": {
+        "operationId": "list_billing_lessons_api_v1_billing_lessons_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "student_subject_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Student Subject Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "payment_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "UNPAID",
+                    "PARTIAL",
+                    "PAID",
+                    "OVERPAID"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Payment Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LessonBillingResponse"
+                  },
+                  "title": "Response List Billing Lessons Api V1 Billing Lessons Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Billing Lessons",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/v1/billing/summary": {
+      "get": {
+        "operationId": "get_billing_summary_api_v1_billing_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingSummaryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Billing Summary",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
     "/api/v1/dashboard": {
       "get": {
         "operationId": "dashboard_api_v1_dashboard_get",
@@ -5478,6 +6410,165 @@
         ]
       }
     },
+    "/api/v1/lessons/{lesson_id}/pricing": {
+      "put": {
+        "operationId": "update_lesson_pricing_api_v1_lessons__lesson_id__pricing_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonPricingUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Lesson Pricing",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/v1/lessons/{lesson_id}/receivable-override": {
+      "post": {
+        "operationId": "override_lesson_receivable_api_v1_lessons__lesson_id__receivable_override_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonReceivableOverride"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Override Lesson Receivable",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/v1/lessons/{lesson_id}/receivable-reset": {
+      "post": {
+        "operationId": "reset_lesson_receivable_api_v1_lessons__lesson_id__receivable_reset_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonReceivableReset"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reset Lesson Receivable",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
     "/api/v1/lessons/{lesson_id}/reschedule": {
       "post": {
         "operationId": "reschedule_lesson_api_v1_lessons__lesson_id__reschedule_post",
@@ -5528,6 +6619,232 @@
         "summary": "Reschedule Lesson",
         "tags": [
           "phase-1"
+        ]
+      }
+    },
+    "/api/v1/payments": {
+      "get": {
+        "operationId": "list_payments_api_v1_payments_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_voided",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Voided",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentResponse"
+                  },
+                  "title": "Response List Payments Api V1 Payments Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Payments",
+        "tags": [
+          "billing"
+        ]
+      },
+      "post": {
+        "operationId": "create_payment_api_v1_payments_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Payment",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/v1/payments/{payment_id}/allocations": {
+      "post": {
+        "operationId": "add_payment_allocation_api_v1_payments__payment_id__allocations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "payment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Payment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentAllocationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Payment Allocation",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/v1/payments/{payment_id}/void": {
+      "post": {
+        "operationId": "void_payment_api_v1_payments__payment_id__void_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "payment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Payment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentVoid"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Void Payment",
+        "tags": [
+          "billing"
         ]
       }
     },
