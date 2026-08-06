@@ -24,6 +24,18 @@ def test_ai_provider_is_restricted_to_supported_adapters() -> None:
         Settings(session_secret="x" * 32, ai_provider="unknown")  # type: ignore[arg-type]
 
 
+def test_vision_provider_is_restricted_to_supported_adapters() -> None:
+    with pytest.raises(ValidationError):
+        Settings(  # type: ignore[arg-type]
+            session_secret="x" * 32, vision_ai_provider="unknown"
+        )
+
+
+def test_qwen_base_url_requires_https() -> None:
+    with pytest.raises(ValidationError, match="HTTPS"):
+        Settings(session_secret="x" * 32, qwen_base_url="http://example.test/v1")
+
+
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [
@@ -32,9 +44,7 @@ def test_ai_provider_is_restricted_to_supported_adapters() -> None:
         ({"trusted_origins": ["http://teacher.example"]}, "HTTPS"),
         ({"trusted_hosts": ["*"]}, "explicit"),
         (
-            {
-                "database_url": "postgresql+asyncpg://teacher_workspace:change-me-local-only@db/app"
-            },
+            {"database_url": "postgresql+asyncpg://teacher_workspace:change-me-local-only@db/app"},
             "non-placeholder password",
         ),
     ],

@@ -277,7 +277,7 @@ export default function LessonPlansPage() {
     <>
       <PageHeader
         title="AI 教案"
-        description="结构化章节编辑、局部重新生成、人工审核、版本历史和教师版 Word 导出。开发环境默认使用 Mock，不产生模型费用。"
+        description="结构化章节编辑、局部重新生成、人工审核、版本历史和教师版 Word 导出。实际模型与费用状态以“模板与 AI”页面为准。"
       />
       {displayedError ? <ErrorNotice error={displayedError} /> : null}
       <form className="card mt-4 grid gap-3 lg:grid-cols-[1fr_1fr_2fr_auto]" onSubmit={generate}>

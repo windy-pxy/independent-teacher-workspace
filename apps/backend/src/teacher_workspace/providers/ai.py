@@ -81,9 +81,7 @@ class MockAIProvider:
                             {
                                 "plan_item_id": plan_item_ids[0],
                                 "status": "IN_PROGRESS",
-                                "actual_minutes_delta": int(
-                                    context.get("actual_minutes") or 0
-                                ),
+                                "actual_minutes_delta": int(context.get("actual_minutes") or 0),
                                 "progress_note": "根据课后反馈建议标记为进行中。",
                             }
                         ]
@@ -109,9 +107,7 @@ class MockAIProvider:
                     "correct_answer": "x = 4",
                     "error_reason": "移项后符号处理错误，需教师复核。",
                     "analysis": "先两边同时减去 3，得到 2x = 8，再两边同时除以 2。",
-                    "knowledge_points": [
-                        {"knowledge_point_id": None, "name": "一元一次方程"}
-                    ],
+                    "knowledge_points": [{"knowledge_point_id": None, "name": "一元一次方程"}],
                     "recognition_notes": "这是 Mock 识别草稿，未读取真实图片内容。",
                 }
             elif context.get("task_type") == "targeted_practice":
@@ -140,9 +136,7 @@ class MockAIProvider:
                 structured = self._lesson_plan_result(context)
         return AIResult(
             content=(
-                json.dumps(structured, ensure_ascii=False)
-                if structured
-                else "Mock AI response"
+                json.dumps(structured, ensure_ascii=False) if structured else "Mock AI response"
             ),
             structured=structured,
             provider_request_id="mock",
@@ -156,71 +150,71 @@ class MockAIProvider:
         durations = [max(1, total_minutes * weight // 100) for weight in weights]
         durations[-1] += total_minutes - sum(durations)
         return {
-                "schema_version": "1.0",
-                "objectives": ["理解本节核心概念", "能够独立完成基础与迁移练习"],
-                "schedule": [
-                    {
-                        "minutes": durations[0],
-                        "title": "复习与诊断",
-                        "activities_markdown": "回顾前置知识，并用两个口头问题确认起点。",
-                    },
-                    {
-                        "minutes": durations[1],
-                        "title": "核心讲解",
-                        "activities_markdown": "结合定义、步骤和反例讲解本节主题。",
-                    },
-                    {
-                        "minutes": durations[2],
-                        "title": "例题与练习",
-                        "activities_markdown": "先示范，再由学生独立完成同类题。",
-                    },
-                    {
-                        "minutes": durations[3],
-                        "title": "纠错与提升",
-                        "activities_markdown": "订正错误，归纳检查方法。",
-                    },
-                    {
-                        "minutes": durations[4],
-                        "title": "总结与作业",
-                        "activities_markdown": "学生复述要点，布置分层作业。",
-                    },
-                ],
-                "knowledge_explanations": [
-                    {
-                        "id": "core-concept",
-                        "title": "核心知识讲解",
-                        "body_markdown": "从**概念、步骤、检验**三个层次展开，并联系学生已有基础。",
-                    }
-                ],
-                "examples": [
-                    {
-                        "id": "example-1",
-                        "stem_markdown": "完成一道与本节主题直接相关的示例题。",
-                        "answer_markdown": "按规范步骤得到正确结论。",
-                        "analysis_markdown": "明确条件，选择方法，逐步计算并回代检查。",
-                        "difficulty": "BASIC",
-                    }
-                ],
-                "in_class_exercises": [
-                    {
-                        "id": "practice-1",
-                        "stem_markdown": "独立完成一道同类变式题。",
-                        "answer_markdown": "答案见解析步骤。",
-                        "analysis_markdown": "先判断题型，再使用例题中的检查流程。",
-                        "difficulty": "MEDIUM",
-                    }
-                ],
-                "common_mistakes": ["忽略题目条件", "完成计算后没有检查"],
-                "homework": [
-                    {
-                        "id": "homework-1",
-                        "stem_markdown": "完成一道基础巩固题并写出完整过程。",
-                        "answer_markdown": "答案随教师版教案提供。",
-                        "analysis_markdown": "参照课堂步骤独立完成并检查。",
-                        "difficulty": "BASIC",
-                    }
-                ],
-                "teacher_notes": ["这是 Mock 生成的虚构草稿，必须由教师审核后使用。"],
+            "schema_version": "1.0",
+            "objectives": ["理解本节核心概念", "能够独立完成基础与迁移练习"],
+            "schedule": [
+                {
+                    "minutes": durations[0],
+                    "title": "复习与诊断",
+                    "activities_markdown": "回顾前置知识，并用两个口头问题确认起点。",
+                },
+                {
+                    "minutes": durations[1],
+                    "title": "核心讲解",
+                    "activities_markdown": "结合定义、步骤和反例讲解本节主题。",
+                },
+                {
+                    "minutes": durations[2],
+                    "title": "例题与练习",
+                    "activities_markdown": "先示范，再由学生独立完成同类题。",
+                },
+                {
+                    "minutes": durations[3],
+                    "title": "纠错与提升",
+                    "activities_markdown": "订正错误，归纳检查方法。",
+                },
+                {
+                    "minutes": durations[4],
+                    "title": "总结与作业",
+                    "activities_markdown": "学生复述要点，布置分层作业。",
+                },
+            ],
+            "knowledge_explanations": [
+                {
+                    "id": "core-concept",
+                    "title": "核心知识讲解",
+                    "body_markdown": "从**概念、步骤、检验**三个层次展开，并联系学生已有基础。",
+                }
+            ],
+            "examples": [
+                {
+                    "id": "example-1",
+                    "stem_markdown": "完成一道与本节主题直接相关的示例题。",
+                    "answer_markdown": "按规范步骤得到正确结论。",
+                    "analysis_markdown": "明确条件，选择方法，逐步计算并回代检查。",
+                    "difficulty": "BASIC",
+                }
+            ],
+            "in_class_exercises": [
+                {
+                    "id": "practice-1",
+                    "stem_markdown": "独立完成一道同类变式题。",
+                    "answer_markdown": "答案见解析步骤。",
+                    "analysis_markdown": "先判断题型，再使用例题中的检查流程。",
+                    "difficulty": "MEDIUM",
+                }
+            ],
+            "common_mistakes": ["忽略题目条件", "完成计算后没有检查"],
+            "homework": [
+                {
+                    "id": "homework-1",
+                    "stem_markdown": "完成一道基础巩固题并写出完整过程。",
+                    "answer_markdown": "答案随教师版教案提供。",
+                    "analysis_markdown": "参照课堂步骤独立完成并检查。",
+                    "difficulty": "BASIC",
+                }
+            ],
+            "teacher_notes": ["这是 Mock 生成的虚构草稿，必须由教师审核后使用。"],
         }
 
     async def cancel(self, provider_request_id: str) -> bool:
@@ -235,9 +229,7 @@ class OpenAIResponsesProvider:
 
     @property
     def capabilities(self) -> AICapabilities:
-        return AICapabilities(
-            text=True, structured_output=True, vision=True, cancellation=False
-        )
+        return AICapabilities(text=True, structured_output=True, vision=True, cancellation=False)
 
     async def generate(self, request: AIRequest) -> AIResult:
         text_config: dict[str, object] | None = None
@@ -252,9 +244,7 @@ class OpenAIResponsesProvider:
             }
         response_input: Any = request.prompt
         if request.images:
-            content: list[dict[str, Any]] = [
-                {"type": "input_text", "text": request.prompt}
-            ]
+            content: list[dict[str, Any]] = [{"type": "input_text", "text": request.prompt}]
             for image in request.images:
                 encoded = base64.b64encode(image.content).decode("ascii")
                 content.append(
@@ -291,18 +281,14 @@ class OpenAIResponsesProvider:
 
 
 class DeepSeekChatProvider:
-    def __init__(
-        self, api_key: str, model: str, base_url: str, max_output_tokens: int
-    ) -> None:
+    def __init__(self, api_key: str, model: str, base_url: str, max_output_tokens: int) -> None:
         self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
         self.model = model
         self.max_output_tokens = max_output_tokens
 
     @property
     def capabilities(self) -> AICapabilities:
-        return AICapabilities(
-            text=True, structured_output=True, vision=False, cancellation=False
-        )
+        return AICapabilities(text=True, structured_output=True, vision=False, cancellation=False)
 
     async def generate(self, request: AIRequest) -> AIResult:
         if request.images:
@@ -311,9 +297,8 @@ class DeepSeekChatProvider:
         response_format: dict[str, str] | None = None
         if request.schema:
             response_format = {"type": "json_object"}
-            schema_instruction = (
-                "\n\n请只输出 JSON，并严格遵循以下 JSON Schema：\n"
-                + json.dumps(request.schema, ensure_ascii=False)
+            schema_instruction = "\n\n请只输出 JSON，并严格遵循以下 JSON Schema：\n" + json.dumps(
+                request.schema, ensure_ascii=False
             )
         request_kwargs: dict[str, Any] = {
             "model": self.model,
@@ -334,6 +319,69 @@ class DeepSeekChatProvider:
         usage = response.usage
         return AIResult(
             content=content,
+            structured=structured,
+            provider_request_id=response.id,
+            input_tokens=usage.prompt_tokens if usage else None,
+            output_tokens=usage.completion_tokens if usage else None,
+        )
+
+    async def cancel(self, provider_request_id: str) -> bool:
+        del provider_request_id
+        return False
+
+
+class QwenVisionProvider:
+    def __init__(self, api_key: str, model: str, base_url: str, max_output_tokens: int) -> None:
+        self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        self.model = model
+        self.max_output_tokens = max_output_tokens
+
+    @property
+    def capabilities(self) -> AICapabilities:
+        return AICapabilities(text=True, structured_output=True, vision=True, cancellation=False)
+
+    async def generate(self, request: AIRequest) -> AIResult:
+        if not request.images:
+            raise RuntimeError("Qwen vision provider requires at least one image")
+        schema_instruction = ""
+        response_format: dict[str, str] | None = None
+        if request.schema:
+            response_format = {"type": "json_object"}
+            schema_instruction = "\n\n请只输出 JSON，并严格遵循以下 JSON Schema：\n" + json.dumps(
+                request.schema, ensure_ascii=False
+            )
+        content: list[dict[str, Any]] = [
+            {"type": "text", "text": request.prompt + schema_instruction}
+        ]
+        for image in request.images:
+            encoded = base64.b64encode(image.content).decode("ascii")
+            content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:{image.mime_type};base64,{encoded}"},
+                }
+            )
+        request_kwargs: dict[str, Any] = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": request.instructions or ""},
+                {"role": "user", "content": content},
+            ],
+            "stream": False,
+            "extra_body": {"enable_thinking": False},
+        }
+        if response_format is not None:
+            request_kwargs["response_format"] = response_format
+        else:
+            request_kwargs["max_completion_tokens"] = self.max_output_tokens
+        response = await self.client.chat.completions.create(**request_kwargs)
+        response_content = response.choices[0].message.content
+        if not response_content:
+            raise RuntimeError("Qwen returned empty content")
+        structured = json.loads(response_content) if request.schema else None
+        usage = response.usage
+        return AIResult(
+            content=response_content,
             structured=structured,
             provider_request_id=response.id,
             input_tokens=usage.prompt_tokens if usage else None,
@@ -374,9 +422,7 @@ def create_ai_provider(settings: Settings) -> AIProvider:
         )
     if settings.ai_provider == "deepseek":
         if not settings.deepseek_api_key or not settings.deepseek_model:
-            raise RuntimeError(
-                "DeepSeek provider requires DEEPSEEK_API_KEY and DEEPSEEK_MODEL"
-            )
+            raise RuntimeError("DeepSeek provider requires DEEPSEEK_API_KEY and DEEPSEEK_MODEL")
         return DeepSeekChatProvider(
             settings.deepseek_api_key,
             settings.deepseek_model,
@@ -389,15 +435,17 @@ def create_ai_provider(settings: Settings) -> AIProvider:
 def configured_vision_model(settings: Settings) -> str | None:
     if settings.vision_ai_provider == "openai":
         return settings.vision_openai_model
+    if settings.vision_ai_provider == "qwen":
+        return settings.qwen_vision_model
     return None
 
 
 def real_vision_provider_configured(settings: Settings) -> bool:
-    return bool(
-        settings.vision_ai_provider == "openai"
-        and settings.openai_api_key
-        and settings.vision_openai_model
-    )
+    if settings.vision_ai_provider == "openai":
+        return bool(settings.openai_api_key and settings.vision_openai_model)
+    if settings.vision_ai_provider == "qwen":
+        return bool(settings.qwen_api_key and settings.qwen_vision_model and settings.qwen_base_url)
+    return False
 
 
 def create_vision_ai_provider(settings: Settings) -> AIProvider:
@@ -411,6 +459,21 @@ def create_vision_ai_provider(settings: Settings) -> AIProvider:
         return OpenAIResponsesProvider(
             settings.openai_api_key,
             settings.vision_openai_model,
+            settings.ai_max_output_tokens,
+        )
+    if settings.vision_ai_provider == "qwen":
+        if (
+            not settings.qwen_api_key
+            or not settings.qwen_vision_model
+            or not settings.qwen_base_url
+        ):
+            raise RuntimeError(
+                "Qwen vision provider requires QWEN_API_KEY, QWEN_VISION_MODEL and QWEN_BASE_URL"
+            )
+        return QwenVisionProvider(
+            settings.qwen_api_key,
+            settings.qwen_vision_model,
+            settings.qwen_base_url,
             settings.ai_max_output_tokens,
         )
     raise RuntimeError(f"Unsupported vision AI provider: {settings.vision_ai_provider}")

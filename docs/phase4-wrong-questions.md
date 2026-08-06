@@ -19,7 +19,7 @@
 ## AI Provider 分离
 
 - `AI_PROVIDER` 负责教案、反馈和针对性练习的文本结构化生成，可使用 Mock、OpenAI 或 DeepSeek。
-- `VISION_AI_PROVIDER` 负责图片题目识别，当前支持 Mock 和 OpenAI。业务服务只依赖统一 `AIProvider`，不直接导入厂商 SDK。
+- `VISION_AI_PROVIDER` 负责图片题目识别，当前支持 Mock、OpenAI 和阿里云百炼 Qwen。业务服务只依赖统一 `AIProvider`，不直接导入厂商 SDK。
 - 使用 OpenAI 视觉输入时，服务端通过 Responses API 的 `input_image` 传入 Base64 数据 URL；模型名称来自 `VISION_OPENAI_MODEL`，不硬编码。
 - AI 失败只更新任务状态与脱敏错误，不改变已批准错题或正式练习。
 
@@ -29,3 +29,10 @@
 - 本阶段不把错题复习直接写入 `StudentMastery` 证据表；错题状态单独保存，后续可设计明确的证据合并规则。
 - 已批准错题和练习的更正工作流将在需要时使用差异版本设计，不允许直接覆盖正式版本。
 - Obsidian 仍是未来可选导出/查阅目标，PostgreSQL 是正式事实源。
+
+## 国产视觉模型
+
+- 阿里云百炼 Qwen 是当前首选国产视觉适配器，推荐模型为 `qwen3.7-plus`。
+- 图片通过请求内 Base64 数据 URL 发送，不创建公开图片 URL；API Key 和带 Workspace ID 的 API Host 只从服务端环境变量读取。
+- 结构化识别使用非思考模式和 JSON 输出，并继续经过 Pydantic 校验、教师修改与人工批准。
+- DeepSeek 文本 Provider 与 Qwen 视觉 Provider 独立配置，切换视觉模型不会改变教案、反馈和练习的文本模型。

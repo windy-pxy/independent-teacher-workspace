@@ -148,7 +148,7 @@ cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync al
 - 开发默认 `AI_PROVIDER=mock`，不会调用付费模型。
 - OpenAI 密钥和模型分别由 `OPENAI_API_KEY`、`OPENAI_MODEL` 提供，只在后端/Worker 使用。
 - DeepSeek 密钥和模型分别由 `DEEPSEEK_API_KEY`、`DEEPSEEK_MODEL` 提供；密钥不要通过聊天、前端或日志传递。
-- 图片识别独立使用 `VISION_AI_PROVIDER`；默认 `mock`。当前真实视觉适配器为 OpenAI，需同时配置 `OPENAI_API_KEY` 和 `VISION_OPENAI_MODEL`；文本仍可使用 DeepSeek。
+- 图片识别独立使用 `VISION_AI_PROVIDER`；默认 `mock`。真实视觉适配器支持 OpenAI 和阿里云百炼 Qwen；文本仍可独立使用 DeepSeek。
 - 本地文件默认写入 `var/storage`，已被 Git 忽略。
 - 所有示例必须使用虚构学生；不要把真实学生信息、上传件、导出文档或备份放入仓库。
 - 生产部署必须启用 TLS、`SESSION_COOKIE_SECURE=true`、强随机会话密钥和独立数据库密码。
@@ -216,6 +216,17 @@ VISION_OPENAI_MODEL=你在提供商控制台确认支持图片输入的当前模
 ```
 
 文本生成可以继续设置为 `AI_PROVIDER=deepseek`，两类任务互不绑定。完整数据和审核边界见 [docs/phase4-wrong-questions.md](docs/phase4-wrong-questions.md)。
+
+中国大陆环境推荐使用阿里云百炼 Qwen 处理错题图片。配置只存在服务端 `.env`：
+
+```dotenv
+VISION_AI_PROVIDER=qwen
+QWEN_API_KEY=你在本地填写的百炼密钥
+QWEN_VISION_MODEL=qwen3.7-plus
+QWEN_BASE_URL=https://你的WorkspaceId.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+```
+
+`QWEN_BASE_URL` 必须使用创建 API Key 时控制台显示的 OpenAI 兼容 API Host，不得臆造 Workspace ID。适配器用 Base64 传递本地 PNG/JPEG、关闭思考模式并要求 JSON 输出；识别结果仍必须人工审核。
 
 ## Phase 5 使用说明
 

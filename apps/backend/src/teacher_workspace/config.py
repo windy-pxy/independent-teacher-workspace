@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
+        env_ignore_empty=True,
         extra="ignore",
         case_sensitive=False,
     )
@@ -61,8 +62,11 @@ class Settings(BaseSettings):
     deepseek_api_key: str | None = None
     deepseek_model: str | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
-    vision_ai_provider: Literal["mock", "openai"] = "mock"
+    vision_ai_provider: Literal["mock", "openai", "qwen"] = "mock"
     vision_openai_model: str | None = None
+    qwen_api_key: str | None = None
+    qwen_vision_model: str | None = None
+    qwen_base_url: str | None = None
     ai_temperature: float | None = None
     ai_max_output_tokens: int = 8192
     worker_id: str = "local-worker"
@@ -70,9 +74,7 @@ class Settings(BaseSettings):
     job_lease_seconds: int = 60
     job_max_attempts: int = 3
 
-    @field_validator(
-        "trusted_origins", "trusted_hosts", "allowed_upload_mime_types", mode="before"
-    )
+    @field_validator("trusted_origins", "trusted_hosts", "allowed_upload_mime_types", mode="before")
     @classmethod
     def parse_comma_separated(cls, value: object) -> object:
         if isinstance(value, str):
@@ -85,6 +87,17 @@ class Settings(BaseSettings):
         if len(value) < 32:
             raise ValueError("SESSION_SECRET must contain at least 32 characters")
         return value
+
+    @field_validator("qwen_base_url")
+    @classmethod
+    def validate_qwen_base_url(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        normalized = value.strip().rstrip("/")
+        parsed = urlsplit(normalized)
+        if parsed.scheme != "https" or not parsed.netloc:
+            raise ValueError("QWEN_BASE_URL must be an HTTPS URL")
+        return normalized
 
     @model_validator(mode="after")
     def validate_production_security(self) -> "Settings":
