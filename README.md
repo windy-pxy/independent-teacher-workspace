@@ -124,6 +124,10 @@ pnpm test
 pnpm api:generate
 pnpm build
 pnpm check
+pnpm check:release
+pnpm security:static
+pnpm security:dependencies
+pnpm performance:smoke
 ```
 
 迁移发生变化时还应在真实 PostgreSQL 上验证：
@@ -215,8 +219,8 @@ VISION_OPENAI_MODEL=你在提供商控制台确认支持图片输入的当前模
 
 人工覆盖应收必须填写原因。误录的收款不会硬删除，需要填写理由作废；对应分摊会从有效到账中排除。页面可直接导出 UTF-8 CSV 或 XLSX，导出文本已防止电子表格公式注入。完整规则见 [docs/phase5-billing.md](docs/phase5-billing.md)。
 
-## 下一阶段
+## 当前阶段
 
-Phase 6 将完善私有部署、TLS、数据库和文件备份恢复、日志与上传安全、性能检查及最终端到端验收。Phase 5 完成后不会自动进入 Phase 6，需先完成本地体验与验收。
+Phase 6 已完成实现、本地自动化验证和用户验收。部署模式和 NATAPP 操作见 [docs/deployment.md](docs/deployment.md)，备份恢复见 [docs/backup-restore.md](docs/backup-restore.md)，安全验收见 [docs/phase6-security.md](docs/phase6-security.md)。NATAPP 公网域名、真实 Supabase Storage 和生产数据恢复仍需在取得对应账号、域名或生产环境后单独验证。
 
 项目的提交和推送必须遵循 [AGENTS.md](AGENTS.md) 中的“双重确认”流程。

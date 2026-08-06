@@ -29,7 +29,16 @@
     "db:rollback": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync alembic -c apps/backend/alembic.ini downgrade -1",
     "api:generate": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python scripts/export_openapi.py && openapi-typescript packages/api-client/openapi.json -o packages/api-client/src/schema.d.ts",
     "docx:sample": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python scripts/generate_sample_docx.py",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm api:generate && pnpm build"
+    "backup:create": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.backup_restore create",
+    "backup:verify": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.backup_restore verify",
+    "backup:drill": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.backup_restore drill",
+    "backup:restore": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.backup_restore restore",
+    "production:check": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.production_check",
+    "security:static": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.security_check",
+    "security:dependencies": "pnpm audit --audit-level high && cross-env PYTHONUTF8=1 uv run --project apps/backend --no-sync pip-audit",
+    "performance:smoke": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.performance_smoke",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm api:generate && pnpm build && pnpm security:static",
+    "check:release": "pnpm check && pnpm security:dependencies && docker compose config --quiet && docker compose -f compose.yaml -f compose.production.yaml config --quiet && docker compose -f compose.yaml -f compose.validation.yaml config --quiet"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

@@ -14,11 +14,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import get_session
+from teacher_workspace.login_throttle import LoginThrottle
 from teacher_workspace.models import AuditLog, User, UserSession
 from teacher_workspace.phase1_schemas import AuthUser, LoginRequest, LoginResponse
 
 router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
 password_hash = PasswordHash.recommended()
+dummy_password_hash = password_hash.hash(secrets.token_urlsafe(32))
+login_throttle = LoginThrottle()
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
@@ -118,11 +121,35 @@ async def login(
     settings: SettingsDep,
 ) -> LoginResponse:
     validate_origin(request, settings)
+    username = payload.username.strip()
+    retry_after = await login_throttle.retry_after(username, settings.login_window_seconds)
+    if retry_after:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"code": "LOGIN_THROTTLED", "message": "登录尝试过多，请稍后再试"},
+            headers={"Retry-After": str(retry_after)},
+        )
     user = await session.scalar(
-        select(User).where(User.username == payload.username.strip(), User.is_active.is_(True))
+        select(User).where(User.username == username, User.is_active.is_(True))
     )
-    if user is None or not password_hash.verify(payload.password, user.password_hash):
+    password_matches = password_hash.verify(
+        payload.password, user.password_hash if user is not None else dummy_password_hash
+    )
+    if user is None or not password_matches:
+        locked_for = await login_throttle.failure(
+            username,
+            max_failures=settings.login_max_failures,
+            window_seconds=settings.login_window_seconds,
+            lock_seconds=settings.login_lock_seconds,
+        )
+        if locked_for:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={"code": "LOGIN_THROTTLED", "message": "登录尝试过多，请稍后再试"},
+                headers={"Retry-After": str(locked_for)},
+            )
         raise unauthorized("账户名或密码错误")
+    await login_throttle.success(username)
 
     raw_token = secrets.token_urlsafe(48)
     csrf_token = secrets.token_urlsafe(32)

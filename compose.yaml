@@ -2,7 +2,7 @@ name: teacher-workspace
 
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-teacher_workspace}
       POSTGRES_USER: ${POSTGRES_USER:-teacher_workspace}
@@ -23,8 +23,20 @@ services:
     command: ["alembic", "-c", "apps/backend/alembic.ini", "upgrade", "head"]
     environment: &backend-environment
       APP_ENV: ${APP_ENV:-development}
+      APP_DOMAIN: ${APP_DOMAIN:-teacher.example.invalid}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Shanghai}
+      APP_CURRENCY: ${APP_CURRENCY:-CNY}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-teacher_workspace}:${POSTGRES_PASSWORD:-change-me-local-only}@db:5432/${POSTGRES_DB:-teacher_workspace}
       SESSION_SECRET: ${SESSION_SECRET:-development-only-replace-me-with-32-characters}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-teacher_workspace_session}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-168}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-http://localhost:3000}
+      TRUSTED_HOSTS: ${TRUSTED_HOSTS:-localhost,127.0.0.1,test,testserver,api}
+      LOGIN_MAX_FAILURES: ${LOGIN_MAX_FAILURES:-5}
+      LOGIN_WINDOW_SECONDS: ${LOGIN_WINDOW_SECONDS:-900}
+      LOGIN_LOCK_SECONDS: ${LOGIN_LOCK_SECONDS:-900}
       AI_PROVIDER: ${AI_PROVIDER:-mock}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-}
@@ -36,6 +48,14 @@ services:
       AI_MAX_OUTPUT_TOKENS: ${AI_MAX_OUTPUT_TOKENS:-8192}
       STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
       LOCAL_STORAGE_ROOT: /app/var/storage
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-20971520}
+      ALLOWED_UPLOAD_MIME_TYPES: ${ALLOWED_UPLOAD_MIME_TYPES:-application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,text/plain}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-teacher-workspace}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-2}
+      JOB_LEASE_SECONDS: ${JOB_LEASE_SECONDS:-60}
+      JOB_MAX_ATTEMPTS: ${JOB_MAX_ATTEMPTS:-3}
     depends_on:
       db:
         condition: service_healthy

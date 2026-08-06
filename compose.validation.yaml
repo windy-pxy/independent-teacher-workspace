@@ -1,0 +1,9 @@
+services:
+  db:
+    ports: !reset []
+
+  api:
+    ports: !reset []
+
+  web:
+    ports: !reset []

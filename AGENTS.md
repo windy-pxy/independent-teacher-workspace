@@ -33,6 +33,13 @@ pnpm api:generate
 pnpm docx:sample
 pnpm build
 pnpm check
+pnpm check:release
+pnpm security:static
+pnpm security:dependencies
+pnpm performance:smoke
+pnpm backup:create
+pnpm backup:verify -- <备份目录>
+pnpm backup:drill -- <备份目录>
 pnpm db:migrate
 pnpm db:rollback
 docker compose up --build -d
@@ -69,4 +76,4 @@ docker compose ps
 6. 只有再次收到明确授权，并核对当前分支、远程地址和待推提交后才推送私有 GitHub。
 7. 禁止强推。创建远程仓库、绑定远程和首次推送都是独立外部操作。
 
-Phase 5 已完成并通过用户验收；用户已授权进入 Phase 6。Phase 6 仍须先完成现状审计，再实施生产部署、备份恢复和最终安全验收。
+Phase 6 已通过用户验收。不得把 NATAPP 公网域名、真实 Supabase Storage 或生产恢复演练描述为已经验证；后续功能和界面改进使用独立提交，不得混入已验收的 Phase 6 提交。

@@ -1,8 +1,11 @@
+import re
 from functools import lru_cache
+from ipaddress import ip_address
 from pathlib import Path
 from typing import Annotated, Literal
+from urllib.parse import urlsplit
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -14,10 +17,11 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    app_env: str = "development"
+    app_env: Literal["development", "test", "production"] = "development"
     app_name: str = "独立教师工作台"
     app_timezone: str = "Asia/Shanghai"
     app_currency: str = "CNY"
+    app_domain: str = "teacher.example.invalid"
     log_level: str = "INFO"
     database_url: str = (
         "postgresql+asyncpg://teacher_workspace:change-me-local-only@localhost:5432/"
@@ -26,12 +30,21 @@ class Settings(BaseSettings):
     trusted_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:3000"]
     )
+    trusted_hosts: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["localhost", "127.0.0.1", "test", "testserver", "api"]
+    )
     session_secret: str = "development-only-replace-me-with-32-characters"
     session_cookie_name: str = "teacher_workspace_session"
     session_cookie_secure: bool = False
     session_ttl_hours: int = 168
-    storage_backend: str = "local"
+    login_max_failures: int = Field(default=5, ge=3, le=20)
+    login_window_seconds: int = Field(default=900, ge=60, le=86400)
+    login_lock_seconds: int = Field(default=900, ge=60, le=86400)
+    storage_backend: Literal["local", "supabase"] = "local"
     local_storage_root: Path = Path("var/storage")
+    supabase_url: str | None = None
+    supabase_service_role_key: str | None = None
+    supabase_storage_bucket: str = "teacher-workspace"
     max_upload_bytes: int = 20 * 1024 * 1024
     allowed_upload_mime_types: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: [
@@ -57,7 +70,9 @@ class Settings(BaseSettings):
     job_lease_seconds: int = 60
     job_max_attempts: int = 3
 
-    @field_validator("trusted_origins", "allowed_upload_mime_types", mode="before")
+    @field_validator(
+        "trusted_origins", "trusted_hosts", "allowed_upload_mime_types", mode="before"
+    )
     @classmethod
     def parse_comma_separated(cls, value: object) -> object:
         if isinstance(value, str):
@@ -70,6 +85,57 @@ class Settings(BaseSettings):
         if len(value) < 32:
             raise ValueError("SESSION_SECRET must contain at least 32 characters")
         return value
+
+    @model_validator(mode="after")
+    def validate_production_security(self) -> "Settings":
+        if self.app_env != "production":
+            return self
+        placeholder_secrets = {
+            "development-only-replace-me-with-32-characters",
+            "replace-with-at-least-32-random-characters",
+        }
+        if self.session_secret in placeholder_secrets or len(self.session_secret) < 48:
+            raise ValueError("Production SESSION_SECRET must not use a documented placeholder")
+        if not self.session_cookie_secure:
+            raise ValueError("SESSION_COOKIE_SECURE must be true in production")
+        if not self.trusted_origins or any(
+            not origin.startswith("https://") for origin in self.trusted_origins
+        ):
+            raise ValueError("Production TRUSTED_ORIGINS must contain HTTPS origins only")
+        if not self.trusted_hosts or "*" in self.trusted_hosts:
+            raise ValueError("Production TRUSTED_HOSTS must be explicit")
+        domain_is_ip = False
+        try:
+            ip_address(self.app_domain)
+            domain_is_ip = True
+        except ValueError:
+            pass
+        if (
+            self.app_domain in {"localhost", "teacher.example.invalid"}
+            or domain_is_ip
+            or not all(
+                re.fullmatch(r"[A-Za-z0-9-]{1,63}", label)
+                and not label.startswith("-")
+                and not label.endswith("-")
+                for label in self.app_domain.split(".")
+            )
+            or f"https://{self.app_domain}" not in self.trusted_origins
+        ):
+            raise ValueError(
+                "Production APP_DOMAIN must be a real hostname included in TRUSTED_ORIGINS"
+            )
+        database_password = urlsplit(self.database_url).password or ""
+        if "change-me-local-only" in self.database_url or len(database_password) < 16:
+            raise ValueError("Production DATABASE_URL must use a strong non-placeholder password")
+        if self.storage_backend == "supabase" and (
+            not self.supabase_url
+            or not self.supabase_url.startswith("https://")
+            or not self.supabase_service_role_key
+        ):
+            raise ValueError(
+                "Supabase storage requires HTTPS SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
+            )
+        return self
 
 
 @lru_cache

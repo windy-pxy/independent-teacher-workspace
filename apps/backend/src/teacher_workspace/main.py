@@ -1,3 +1,4 @@
+import re
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -8,6 +9,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from teacher_workspace import __version__
 from teacher_workspace.auth import router as auth_router
@@ -32,9 +34,10 @@ app = FastAPI(
     title=settings.app_name,
     version=__version__,
     docs_url="/api/docs" if settings.app_env != "production" else None,
-    openapi_url="/api/openapi.json",
+    openapi_url="/api/openapi.json" if settings.app_env != "production" else None,
     lifespan=lifespan,
 )
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.trusted_origins,
@@ -53,10 +56,19 @@ app.include_router(phase5_router)
 
 @app.middleware("http")
 async def request_id_middleware(request: Request, call_next: Any) -> Any:
-    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    candidate = request.headers.get("X-Request-ID", "")
+    request_id = (
+        candidate
+        if re.fullmatch(r"[A-Za-z0-9._-]{1,128}", candidate)
+        else str(uuid.uuid4())
+    )
     request.state.request_id = request_id
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "same-origin"
+    response.headers["Cache-Control"] = "no-store"
     return response
 
 
@@ -97,4 +109,12 @@ async def validation_exception_handler(
             "Request validation failed",
             jsonable_encoder(exc.errors()),
         ),
+    )
+
+
+@app.exception_handler(Exception)
+async def unexpected_exception_handler(request: Request, _: Exception) -> JSONResponse:
+    return JSONResponse(
+        status_code=500,
+        content=error_body(request, "INTERNAL_ERROR", "服务器暂时无法完成请求"),
     )
