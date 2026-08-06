@@ -5353,6 +5353,25 @@
         ]
       }
     },
+    "/api/v1/exports/obsidian.zip": {
+      "post": {
+        "operationId": "export_obsidian_snapshot_api_v1_exports_obsidian_zip_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Export Obsidian Snapshot",
+        "tags": [
+          "exports"
+        ]
+      }
+    },
     "/api/v1/lesson-documents/{document_id}": {
       "put": {
         "operationId": "save_lesson_document_api_v1_lesson_documents__document_id__put",

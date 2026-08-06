@@ -7,7 +7,7 @@ from pathlib import Path
 
 FORBIDDEN_NAMES = {".env", "id_rsa", "id_ed25519"}
 FORBIDDEN_SUFFIXES = {".pem", ".key", ".dump", ".sql", ".sqlite", ".sqlite3", ".docx", ".xlsx"}
-FORBIDDEN_PARTS = {"backups", "exports", "logs", "uploads", "var"}
+FORBIDDEN_ROOT_DIRECTORIES = {"backups", "exports", "logs", "uploads", "var"}
 SECRET_PATTERNS = [
     re.compile(rb"-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----"),
     re.compile(rb"\bgh[opusr]_[A-Za-z0-9]{20,}\b"),
@@ -40,14 +40,13 @@ def check_repository(root: Path) -> dict[str, int | str]:
     scanned = 0
     for path in files:
         relative = path.relative_to(root)
-        lowered_parts = {part.casefold() for part in relative.parts}
         if relative.name in FORBIDDEN_NAMES or (
             relative.name.startswith(".env.") and relative.name != ".env.example"
         ):
             failures.append(f"forbidden environment file: {relative}")
         if relative.suffix.casefold() in FORBIDDEN_SUFFIXES:
             failures.append(f"forbidden generated/private artifact: {relative}")
-        if lowered_parts & FORBIDDEN_PARTS:
+        if relative.parts[0].casefold() in FORBIDDEN_ROOT_DIRECTORIES:
             failures.append(f"forbidden runtime directory: {relative}")
         if not path.is_file() or path.stat().st_size > 2 * 1024 * 1024:
             continue

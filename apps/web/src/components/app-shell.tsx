@@ -16,6 +16,7 @@ const navigation = [
   ["/lessons", "课程与课表"],
   ["/lesson-plans", "AI 教案"],
   ["/materials", "资料库"],
+  ["/exports", "导出与 Obsidian"],
   ["/feedback", "课后反馈"],
   ["/wrong-questions", "错题与复习"],
   ["/practice", "针对性练习"],

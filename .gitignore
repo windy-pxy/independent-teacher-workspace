@@ -22,11 +22,11 @@ __pycache__/
 dist/
 
 # Runtime and private data
-var/
-uploads/
-exports/
-backups/
-logs/
+/var/
+/uploads/
+/exports/
+/backups/
+/logs/
 fixtures/private/
 *.sql
 *.dump

@@ -1,6 +1,6 @@
 # 独立教师工作台
 
-仅供一名教师个人使用的课程与教学工作流系统。Phase 0—7 已完成并验收，当前准备实现 Obsidian 单向 Markdown 导出。
+仅供一名教师个人使用的课程与教学工作流系统。Phase 0—8 已完成并验收。
 
 ## 当前能力
 
@@ -20,6 +20,7 @@
 - 课时、应收、实际收款、多课程分摊、欠费查询和 CSV/XLSX 报表。
 - Caddy/NATAPP 部署、生产配置预检、加密备份恢复、安全与性能检查。
 - PDF、DOCX、TXT 资料安全上传和文本分段；生成教案时由教师明确选择要引用的资料。
+- 把正式教学数据导出为可直接用 Obsidian 打开的单向只读 Markdown 快照。
 - Mock/OpenAI/DeepSeek 可替换 AI Provider；DeepSeek 适配器使用兼容 Chat Completions 的 JSON 模式。
 - DOCX 使用年级样式配置，当前提供通用小学/初中/高中视觉档案；后续可在不改变教案数据结构的情况下增加固定模板。
 - Next.js 16 Web，通过同源代理访问 FastAPI；所有按钮均连接真实 API。
@@ -233,3 +234,9 @@ Phase 6 已完成实现、本地自动化验证和用户验收。部署模式和
 访问 <http://localhost:3000/materials>，可把 PDF、DOCX 或 UTF-8 TXT 资料关联到指定学生学科。系统保存原文件，同时提取有长度上限的文本片段；扫描版和加密 PDF 暂不支持，原文件正文不会写入日志。
 
 生成教案前，在 <http://localhost:3000/lesson-plans> 勾选本节真正需要的资料。每次最多选择 10 份，发送给模型的资料正文总量限制为 12000 字符；未勾选的资料不会进入该次 AI 上下文。资料正文按不可信输入处理，不能改变系统角色或触发工具调用。
+
+## Phase 8 使用说明
+
+访问 <http://localhost:3000/exports>，点击“下载 Obsidian 快照”。解压 ZIP 后，在 Obsidian 中选择“打开文件夹作为仓库”即可离线查阅学生档案、学生学科、教学计划、掌握度、课程、已批准教案、已批准反馈和正式错题。
+
+该 ZIP 是时间点只读快照，不会写入你现有的 Obsidian 仓库，Obsidian 中的修改也不会同步回工作台。PostgreSQL 始终是唯一正式数据源。导出包不包含密码、API 密钥、会话、日志、收费明细或原始上传附件；但仍含学生教学资料，只应存放在你控制的设备或加密备份中。完整边界见 [docs/phase8-obsidian-export.md](docs/phase8-obsidian-export.md)。

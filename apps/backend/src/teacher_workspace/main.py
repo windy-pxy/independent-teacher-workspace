@@ -22,6 +22,7 @@ from teacher_workspace.phase3 import router as phase3_router
 from teacher_workspace.phase4 import router as phase4_router
 from teacher_workspace.phase5 import router as phase5_router
 from teacher_workspace.phase7 import router as phase7_router
+from teacher_workspace.phase8 import router as phase8_router
 
 
 @asynccontextmanager
@@ -54,6 +55,7 @@ app.include_router(phase3_router)
 app.include_router(phase4_router)
 app.include_router(phase5_router)
 app.include_router(phase7_router)
+app.include_router(phase8_router)
 
 
 @app.middleware("http")
