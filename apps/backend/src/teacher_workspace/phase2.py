@@ -30,6 +30,7 @@ from teacher_workspace.models import (
     Student,
     StudentSubject,
     Subject,
+    UploadedMaterial,
 )
 from teacher_workspace.phase2_schemas import (
     AIJobResponse,
@@ -64,9 +65,7 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 def api_error(status_code: int, code: str, message: str) -> HTTPException:
-    return HTTPException(
-        status_code=status_code, detail={"code": code, "message": message}
-    )
+    return HTTPException(status_code=status_code, detail={"code": code, "message": message})
 
 
 def check_version(actual: int, expected: int) -> None:
@@ -162,10 +161,7 @@ async def list_prompt_templates(user: UserDep, session: SessionDep) -> list[Prom
             .join(
                 PromptTemplateVersion,
                 (PromptTemplateVersion.template_id == PromptTemplate.id)
-                & (
-                    PromptTemplateVersion.version_number
-                    == PromptTemplate.current_version_number
-                ),
+                & (PromptTemplateVersion.version_number == PromptTemplate.current_version_number),
             )
             .where(
                 PromptTemplate.owner_user_id == user.id,
@@ -287,9 +283,32 @@ async def generate_lesson_document(
     session: SessionDep,
 ) -> AIJobResponse:
     lesson = await _owned_lesson(session, lesson_id, user.id)
-    template_version = await resolve_template_version(
-        session, user.id, payload.template_id
-    )
+    material_ids = list(dict.fromkeys(payload.material_ids))
+    if material_ids:
+        valid_material_ids = set(
+            (
+                await session.scalars(
+                    select(UploadedMaterial.id).where(
+                        UploadedMaterial.id.in_(material_ids),
+                        UploadedMaterial.owner_user_id == user.id,
+                        UploadedMaterial.student_subject_id == lesson.student_subject_id,
+                        UploadedMaterial.purpose.in_(
+                            (
+                                "TEACHING_MATERIAL",
+                                "EXAM_PAPER",
+                                "OLD_LESSON_PLAN",
+                                "OTHER_REFERENCE",
+                            )
+                        ),
+                        UploadedMaterial.processing_status == "READY",
+                        UploadedMaterial.archived_at.is_(None),
+                    )
+                )
+            ).all()
+        )
+        if valid_material_ids != set(material_ids):
+            raise api_error(422, "INVALID_MATERIAL", "包含不可用或不属于该课程的资料")
+    template_version = await resolve_template_version(session, user.id, payload.template_id)
     document = await session.scalar(
         select(LessonDocument).where(
             LessonDocument.lesson_id == lesson.id,
@@ -309,11 +328,11 @@ async def generate_lesson_document(
         await session.flush()
     running_jobs = (
         await session.scalars(
-        select(AIJob).where(
-            AIJob.owner_user_id == user.id,
-            AIJob.task_type.in_(("lesson_plan.generate", "lesson_plan.regenerate_section")),
-            AIJob.status.in_((AIJobStatus.QUEUED, AIJobStatus.RUNNING)),
-        )
+            select(AIJob).where(
+                AIJob.owner_user_id == user.id,
+                AIJob.task_type.in_(("lesson_plan.generate", "lesson_plan.regenerate_section")),
+                AIJob.status.in_((AIJobStatus.QUEUED, AIJobStatus.RUNNING)),
+            )
         )
     ).all()
     if any(job.input_payload.get("document_id") == str(document.id) for job in running_jobs):
@@ -328,6 +347,7 @@ async def generate_lesson_document(
         input_payload={
             "document_id": str(document.id),
             "extra_requirements": payload.extra_requirements,
+            "material_ids": [str(item) for item in material_ids],
         },
         max_attempts=get_settings().job_max_attempts,
     )
@@ -348,9 +368,7 @@ async def get_ai_job(job_id: uuid.UUID, user: UserDep, session: SessionDep) -> A
     return AIJobResponse.model_validate(job, from_attributes=True)
 
 
-@router.get(
-    "/lessons/{lesson_id}/document", response_model=LessonDocumentResponse
-)
+@router.get("/lessons/{lesson_id}/document", response_model=LessonDocumentResponse)
 async def get_lesson_document(
     lesson_id: uuid.UUID, user: UserDep, session: SessionDep
 ) -> LessonDocumentResponse:
@@ -384,9 +402,7 @@ async def list_document_versions(
     return [DocumentVersionResponse.model_validate(row) for row in versions]
 
 
-@router.put(
-    "/lesson-documents/{document_id}", response_model=LessonDocumentResponse
-)
+@router.put("/lesson-documents/{document_id}", response_model=LessonDocumentResponse)
 async def save_lesson_document(
     document_id: uuid.UUID,
     payload: SaveDocumentRequest,
@@ -396,14 +412,17 @@ async def save_lesson_document(
 ) -> LessonDocumentResponse:
     document = await _owned_document(session, document_id, user.id)
     check_version(document.version, payload.version)
-    next_number = int(
-        await session.scalar(
-            select(func.coalesce(func.max(DocumentVersion.version_number), 0)).where(
-                DocumentVersion.document_id == document.id
+    next_number = (
+        int(
+            await session.scalar(
+                select(func.coalesce(func.max(DocumentVersion.version_number), 0)).where(
+                    DocumentVersion.document_id == document.id
+                )
             )
+            or 0
         )
-        or 0
-    ) + 1
+        + 1
+    )
     version = DocumentVersion(
         document_id=document.id,
         version_number=next_number,
@@ -438,9 +457,7 @@ async def regenerate_document_section(
         await session.scalars(
             select(AIJob).where(
                 AIJob.owner_user_id == user.id,
-                AIJob.task_type.in_(
-                    ("lesson_plan.generate", "lesson_plan.regenerate_section")
-                ),
+                AIJob.task_type.in_(("lesson_plan.generate", "lesson_plan.regenerate_section")),
                 AIJob.status.in_((AIJobStatus.QUEUED, AIJobStatus.RUNNING)),
             )
         )
@@ -531,9 +548,7 @@ async def _review_transition(
     return await _document_response(session, document)
 
 
-@router.post(
-    "/lesson-documents/{document_id}/submit", response_model=LessonDocumentResponse
-)
+@router.post("/lesson-documents/{document_id}/submit", response_model=LessonDocumentResponse)
 async def submit_document(
     document_id: uuid.UUID,
     payload: ReviewActionRequest,
@@ -547,9 +562,7 @@ async def submit_document(
     )
 
 
-@router.post(
-    "/lesson-documents/{document_id}/approve", response_model=LessonDocumentResponse
-)
+@router.post("/lesson-documents/{document_id}/approve", response_model=LessonDocumentResponse)
 async def approve_document(
     document_id: uuid.UUID,
     payload: ReviewActionRequest,
@@ -558,14 +571,10 @@ async def approve_document(
     session: SessionDep,
 ) -> LessonDocumentResponse:
     document = await _owned_document(session, document_id, user.id)
-    return await _review_transition(
-        session, document, user.id, payload, ReviewStatus.APPROVED
-    )
+    return await _review_transition(session, document, user.id, payload, ReviewStatus.APPROVED)
 
 
-@router.post(
-    "/lesson-documents/{document_id}/reject", response_model=LessonDocumentResponse
-)
+@router.post("/lesson-documents/{document_id}/reject", response_model=LessonDocumentResponse)
 async def reject_document(
     document_id: uuid.UUID,
     payload: ReviewActionRequest,
@@ -574,9 +583,7 @@ async def reject_document(
     session: SessionDep,
 ) -> LessonDocumentResponse:
     document = await _owned_document(session, document_id, user.id)
-    return await _review_transition(
-        session, document, user.id, payload, ReviewStatus.REJECTED
-    )
+    return await _review_transition(session, document, user.id, payload, ReviewStatus.REJECTED)
 
 
 @router.post("/lesson-documents/{document_id}/export.docx")
@@ -625,8 +632,6 @@ async def export_document_docx(
     filename = safe_docx_filename(metadata)
     return Response(
         content=docx_bytes,
-        media_type=(
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ),
+        media_type=("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
         headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"},
     )

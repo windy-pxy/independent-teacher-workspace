@@ -15,6 +15,7 @@ const navigation = [
   ["/plans", "教学计划"],
   ["/lessons", "课程与课表"],
   ["/lesson-plans", "AI 教案"],
+  ["/materials", "资料库"],
   ["/feedback", "课后反馈"],
   ["/wrong-questions", "错题与复习"],
   ["/practice", "针对性练习"],

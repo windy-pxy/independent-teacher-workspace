@@ -18,6 +18,7 @@ export type DocumentVersion = components["schemas"]["DocumentVersionResponse"];
 export type AIJob = components["schemas"]["AIJobResponse"];
 export type PromptTemplate = components["schemas"]["PromptTemplateResponse"];
 export type AISettings = components["schemas"]["AISettingsResponse"];
+export type Material = components["schemas"]["MaterialResponse"];
 export type LessonFeedback = components["schemas"]["LessonFeedbackResponse"];
 export type LessonFeedbackContent = components["schemas"]["LessonFeedbackContent"];
 export type FeedbackVersion = components["schemas"]["FeedbackVersionResponse"];

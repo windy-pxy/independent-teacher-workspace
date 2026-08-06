@@ -1,6 +1,6 @@
 # 独立教师工作台
 
-仅供一名教师个人使用的课程与教学工作流系统。本仓库当前实现到 **Phase 4：错题与针对性练习**。收费仍属于后续阶段。
+仅供一名教师个人使用的课程与教学工作流系统。Phase 0—7 已完成并验收，当前准备实现 Obsidian 单向 Markdown 导出。
 
 ## 当前能力
 
@@ -17,6 +17,9 @@
 - 反馈批准事务同步教学计划、结构化知识点掌握度证据和下次课建议；批准前不改正式数据。
 - 文本错题、PNG/JPEG 安全上传、可替换视觉识别、人工审核、复习记录和结构化掌握状态。
 - 根据正式错题、错误原因、知识点与学生基础生成针对性练习；题目、答案和解析经教师批准后才发布。
+- 课时、应收、实际收款、多课程分摊、欠费查询和 CSV/XLSX 报表。
+- Caddy/NATAPP 部署、生产配置预检、加密备份恢复、安全与性能检查。
+- PDF、DOCX、TXT 资料安全上传和文本分段；生成教案时由教师明确选择要引用的资料。
 - Mock/OpenAI/DeepSeek 可替换 AI Provider；DeepSeek 适配器使用兼容 Chat Completions 的 JSON 模式。
 - DOCX 使用年级样式配置，当前提供通用小学/初中/高中视觉档案；后续可在不改变教案数据结构的情况下增加固定模板。
 - Next.js 16 Web，通过同源代理访问 FastAPI；所有按钮均连接真实 API。
@@ -180,7 +183,7 @@ cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync al
 pnpm docx:sample
 ```
 
-输出写入被 Git 忽略的 `var/exports`。当前公式以 Unicode/纯文本形式导出，不承诺 Word 原生 OMML 公式编辑；上传教材和旧教案的检索将在后续资料模块补充。
+输出写入被 Git 忽略的 `var/exports`。当前公式以 Unicode/纯文本形式导出，不承诺 Word 原生 OMML 公式编辑。
 
 ## Phase 3 使用说明
 
@@ -219,8 +222,14 @@ VISION_OPENAI_MODEL=你在提供商控制台确认支持图片输入的当前模
 
 人工覆盖应收必须填写原因。误录的收款不会硬删除，需要填写理由作废；对应分摊会从有效到账中排除。页面可直接导出 UTF-8 CSV 或 XLSX，导出文本已防止电子表格公式注入。完整规则见 [docs/phase5-billing.md](docs/phase5-billing.md)。
 
-## 当前阶段
+## Phase 6 使用说明
 
 Phase 6 已完成实现、本地自动化验证和用户验收。部署模式和 NATAPP 操作见 [docs/deployment.md](docs/deployment.md)，备份恢复见 [docs/backup-restore.md](docs/backup-restore.md)，安全验收见 [docs/phase6-security.md](docs/phase6-security.md)。NATAPP 公网域名、真实 Supabase Storage 和生产数据恢复仍需在取得对应账号、域名或生产环境后单独验证。
 
 项目的提交和推送必须遵循 [AGENTS.md](AGENTS.md) 中的“双重确认”流程。
+
+## Phase 7 使用说明
+
+访问 <http://localhost:3000/materials>，可把 PDF、DOCX 或 UTF-8 TXT 资料关联到指定学生学科。系统保存原文件，同时提取有长度上限的文本片段；扫描版和加密 PDF 暂不支持，原文件正文不会写入日志。
+
+生成教案前，在 <http://localhost:3000/lesson-plans> 勾选本节真正需要的资料。每次最多选择 10 份，发送给模型的资料正文总量限制为 12000 字符；未勾选的资料不会进入该次 AI 上下文。资料正文按不可信输入处理，不能改变系统角色或触发工具调用。

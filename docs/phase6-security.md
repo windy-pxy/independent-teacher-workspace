@@ -7,7 +7,7 @@
 - 请求 ID 仅接受 1–128 位安全字符；未处理异常统一返回脱敏 `INTERNAL_ERROR`。
 - 登录连续失败达到阈值后临时锁定；内存中只保留账户名 SHA-256，不保存密码或明文账户名。重启 API 会清空限流状态，这是单实例本地部署的已知边界。
 - 本地和 Supabase Storage 使用同一对象键校验；Supabase 错误不返回上游正文或 service-role key。
-- 上传仍校验大小、扩展名、MIME 和文件魔数。当前实际图片上传仅允许 PNG/JPEG；教材 DOCX/PDF 上传业务尚未开放，因此本阶段不引入 ClamAV 常驻服务。
+- Phase 6 验收时实际图片上传仅允许 PNG/JPEG；Phase 7 后续增加的资料库安全边界和未集成常驻恶意软件扫描的限制，以 [phase7-material-library.md](phase7-material-library.md) 为准。
 - 收款、审核版本和审计日志不通过普通 UI 硬删；备份恢复具有双重确认和自动恢复前快照。
 - PostgreSQL、Python、Node 和 Caddy 容器基础镜像同时固定版本标签与 manifest digest；升级 digest 前必须重新构建并执行本验收矩阵。
 

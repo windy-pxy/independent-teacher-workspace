@@ -363,12 +363,8 @@ class Lesson(Base):
     __table_args__ = (
         Index("ix_lessons_student_subject_start", "student_subject_id", "scheduled_start"),
         Index("ix_lessons_status_start", "status", "scheduled_start"),
-        CheckConstraint(
-            "unit_price_cents >= 0", name="ck_lessons_unit_price_nonnegative"
-        ),
-        CheckConstraint(
-            "receivable_cents >= 0", name="ck_lessons_receivable_nonnegative"
-        ),
+        CheckConstraint("unit_price_cents >= 0", name="ck_lessons_unit_price_nonnegative"),
+        CheckConstraint("receivable_cents >= 0", name="ck_lessons_receivable_nonnegative"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -448,9 +444,7 @@ class PaymentAllocation(Base):
     __tablename__ = "payment_allocations"
     __table_args__ = (
         UniqueConstraint("payment_id", "lesson_id"),
-        CheckConstraint(
-            "amount_cents > 0", name="ck_payment_allocations_amount_positive"
-        ),
+        CheckConstraint("amount_cents > 0", name="ck_payment_allocations_amount_positive"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -704,6 +698,27 @@ class UploadedMaterial(Base):
     sha256: Mapped[str] = mapped_column(String(64))
     processing_status: Mapped[str] = mapped_column(String(30), default="READY")
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class MaterialChunk(Base):
+    __tablename__ = "material_chunks"
+    __table_args__ = (
+        UniqueConstraint("material_id", "chunk_index"),
+        Index("ix_material_chunks_material_order", "material_id", "chunk_index"),
+        CheckConstraint("chunk_index >= 0", name="ck_material_chunks_index_nonnegative"),
+        CheckConstraint("char_count > 0", name="ck_material_chunks_chars_positive"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    material_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("uploaded_materials.id", ondelete="CASCADE"), index=True
+    )
+    chunk_index: Mapped[int] = mapped_column(Integer)
+    source_locator: Mapped[str | None] = mapped_column(String(100))
+    content: Mapped[str] = mapped_column(Text)
+    char_count: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 

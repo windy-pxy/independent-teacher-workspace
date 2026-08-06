@@ -59,6 +59,7 @@ class PromptTemplateResponse(BaseModel):
 class GenerateLessonPlanRequest(BaseModel):
     template_id: uuid.UUID | None = None
     extra_requirements: str | None = Field(default=None, max_length=5000)
+    material_ids: list[uuid.UUID] = Field(default_factory=list, max_length=10)
 
 
 class RegenerateSectionRequest(BaseModel):

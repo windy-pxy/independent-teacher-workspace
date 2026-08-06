@@ -21,6 +21,7 @@ from teacher_workspace.phase2 import router as phase2_router
 from teacher_workspace.phase3 import router as phase3_router
 from teacher_workspace.phase4 import router as phase4_router
 from teacher_workspace.phase5 import router as phase5_router
+from teacher_workspace.phase7 import router as phase7_router
 
 
 @asynccontextmanager
@@ -52,15 +53,14 @@ app.include_router(phase2_router)
 app.include_router(phase3_router)
 app.include_router(phase4_router)
 app.include_router(phase5_router)
+app.include_router(phase7_router)
 
 
 @app.middleware("http")
 async def request_id_middleware(request: Request, call_next: Any) -> Any:
     candidate = request.headers.get("X-Request-ID", "")
     request_id = (
-        candidate
-        if re.fullmatch(r"[A-Za-z0-9._-]{1,128}", candidate)
-        else str(uuid.uuid4())
+        candidate if re.fullmatch(r"[A-Za-z0-9._-]{1,128}", candidate) else str(uuid.uuid4())
     )
     request.state.request_id = request_id
     response = await call_next(request)

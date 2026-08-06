@@ -1,6 +1,6 @@
 # 数据库 ER 设计
 
-Phase 0 初始迁移创建 `User`、`UserSession`、`AIJob`、`AIJobAttempt`、`AuditLog`。Phase 1 新增学生、学科、计划和课程实体；Phase 2 新增提示词和教案版本实体；Phase 3 新增反馈和掌握度；Phase 4 新增上传资料、错题/复习和练习题集的逻辑记录与不可变版本。收费仍按后续阶段补充迁移。
+Phase 0 初始迁移创建 `User`、`UserSession`、`AIJob`、`AIJobAttempt`、`AuditLog`。Phase 1 新增学生、学科、计划和课程实体；Phase 2 新增提示词和教案版本实体；Phase 3 新增反馈和掌握度；Phase 4 新增上传资料、错题/复习和练习题集；Phase 5 新增收款与课程分摊；Phase 7 为资料库增加安全提取后的 `MaterialChunk`。
 
 ```mermaid
 erDiagram
@@ -33,6 +33,7 @@ erDiagram
     STUDENT_MASTERY ||--o{ MASTERY_EVIDENCE : supported_by
     LESSON }o--o{ PAYMENT : allocated_by
     USER ||--o{ UPLOADED_MATERIAL : owns
+    UPLOADED_MATERIAL ||--o{ MATERIAL_CHUNK : extracts
     PROMPT_TEMPLATE ||--o{ PROMPT_TEMPLATE_VERSION : versions
     AI_JOB ||--o{ AI_JOB_ATTEMPT : attempts
     USER ||--o{ AUDIT_LOG : acts

@@ -601,6 +601,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/materials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Materials */
+        get: operations["list_materials_api_v1_materials_get"];
+        put?: never;
+        /** Upload Material */
+        post: operations["upload_material_api_v1_materials_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/materials/{material_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive Material */
+        post: operations["archive_material_api_v1_materials__material_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/materials/{material_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Library Material */
+        get: operations["download_library_material_api_v1_materials__material_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/payments": {
         parameters: {
             query?: never;
@@ -1424,6 +1476,21 @@ export interface components {
              */
             student_subject_id: string;
         };
+        /** Body_upload_material_api_v1_materials_post */
+        Body_upload_material_api_v1_materials_post: {
+            /** File */
+            file: string;
+            /**
+             * Purpose
+             * @enum {string}
+             */
+            purpose: "TEACHING_MATERIAL" | "EXAM_PAPER" | "OLD_LESSON_PLAN" | "OTHER_REFERENCE";
+            /**
+             * Student Subject Id
+             * Format: uuid
+             */
+            student_subject_id: string;
+        };
         /** DashboardProgress */
         DashboardProgress: {
             /** Completed Items */
@@ -1588,6 +1655,8 @@ export interface components {
         GenerateLessonPlanRequest: {
             /** Extra Requirements */
             extra_requirements?: string | null;
+            /** Material Ids */
+            material_ids?: string[];
             /** Template Id */
             template_id?: string | null;
         };
@@ -2049,6 +2118,54 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /** Version */
+            version: number;
+        };
+        /** MaterialArchiveRequest */
+        MaterialArchiveRequest: {
+            /** Reason */
+            reason: string;
+            /** Version */
+            version: number;
+        };
+        /** MaterialResponse */
+        MaterialResponse: {
+            /** Chunk Count */
+            chunk_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Display Name */
+            display_name: string;
+            /** Extracted Chars */
+            extracted_chars: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Processing Status */
+            processing_status: string;
+            /**
+             * Purpose
+             * @enum {string}
+             */
+            purpose: "TEACHING_MATERIAL" | "EXAM_PAPER" | "OLD_LESSON_PLAN" | "OTHER_REFERENCE";
+            /** Size Bytes */
+            size_bytes: number;
+            /** Student Name */
+            student_name: string;
+            /**
+             * Student Subject Id
+             * Format: uuid
+             */
+            student_subject_id: string;
+            /** Subject Name */
+            subject_name: string;
             /** Version */
             version: number;
         };
@@ -4160,6 +4277,134 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LessonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_materials_api_v1_materials_get: {
+        parameters: {
+            query?: {
+                student_subject_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaterialResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_material_api_v1_materials_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_material_api_v1_materials_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaterialResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_material_api_v1_materials__material_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                material_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MaterialArchiveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_library_material_api_v1_materials__material_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                material_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

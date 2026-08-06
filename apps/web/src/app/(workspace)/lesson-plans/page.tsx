@@ -12,6 +12,7 @@ import type {
   Lesson,
   LessonDocument,
   LessonPlanContent,
+  Material,
   PromptTemplate,
 } from "@/lib/types";
 
@@ -117,8 +118,18 @@ export default function LessonPlansPage() {
     queryFn: () => api<PromptTemplate[]>("/prompt-templates"),
   });
   const [lessonId, setLessonId] = useState(searchParams.get("lesson") ?? "");
+  const selectedLesson = lessons.data?.find((lesson) => lesson.id === lessonId);
+  const materials = useQuery({
+    queryKey: ["materials", selectedLesson?.student_subject_id],
+    queryFn: () =>
+      api<Material[]>(
+        `/materials?student_subject_id=${encodeURIComponent(selectedLesson!.student_subject_id)}`,
+      ),
+    enabled: Boolean(selectedLesson),
+  });
   const [templateId, setTemplateId] = useState("");
   const [extraRequirements, setExtraRequirements] = useState("");
+  const [materialIds, setMaterialIds] = useState<string[]>([]);
   const [jobId, setJobId] = useState<string>();
   const [downloading, setDownloading] = useState(false);
   const [draftEdit, setDraftEdit] = useState<{
@@ -181,6 +192,7 @@ export default function LessonPlansPage() {
         ...jsonBody({
           template_id: templateId || null,
           extra_requirements: extraRequirements || null,
+          material_ids: materialIds,
         }),
       });
       setJobId(queued.id);
@@ -269,7 +281,7 @@ export default function LessonPlansPage() {
       />
       {displayedError ? <ErrorNotice error={displayedError} /> : null}
       <form className="card mt-4 grid gap-3 lg:grid-cols-[1fr_1fr_2fr_auto]" onSubmit={generate}>
-        <select className="field" value={lessonId} onChange={(event) => setLessonId(event.target.value)} required>
+        <select className="field" value={lessonId} onChange={(event) => { setLessonId(event.target.value); setMaterialIds([]); }} required>
           <option value="">选择课程</option>
           {lessons.data?.map((lesson) => (
             <option value={lesson.id} key={lesson.id}>
@@ -294,6 +306,28 @@ export default function LessonPlansPage() {
         <button className="button-primary" disabled={!lessonId || job.isFetching}>
           {job.isFetching ? "生成中…" : document.data ? "生成新草稿" : "生成教案"}
         </button>
+        {lessonId ? (
+          <fieldset className="rounded-xl border border-[var(--border)] p-3 lg:col-span-4">
+            <legend className="px-2 text-sm font-medium">参考资料（最多选择 10 份）</legend>
+            {materials.data?.length ? (
+              <div className="flex flex-wrap gap-3">
+                {materials.data.map((material) => (
+                  <label className="flex items-center gap-2 text-sm" key={material.id}>
+                    <input
+                      type="checkbox"
+                      checked={materialIds.includes(material.id)}
+                      disabled={!materialIds.includes(material.id) && materialIds.length >= 10}
+                      onChange={(event) => setMaterialIds((current) => event.target.checked ? [...current, material.id] : current.filter((id) => id !== material.id))}
+                    />
+                    <span>{material.display_name}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--muted)]">该学生学科暂无资料，可先到“资料库”上传。</p>
+            )}
+          </fieldset>
+        ) : null}
       </form>
 
       {!lessonId ? (
