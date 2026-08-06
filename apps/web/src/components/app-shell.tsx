@@ -51,8 +51,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:grid-cols-[190px_1fr]">
-        <nav aria-label="主导航" className="flex gap-2 overflow-x-auto lg:flex-col">
+      <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 md:grid-cols-[190px_minmax(0,1fr)]">
+        <nav
+          aria-label="主导航"
+          className="flex gap-2 overflow-x-auto md:sticky md:top-24 md:max-h-[calc(100vh-7rem)] md:flex-col md:self-start md:overflow-x-visible md:overflow-y-auto"
+        >
           {navigation.map(([href, label]) => (
             <Link
               key={href}
