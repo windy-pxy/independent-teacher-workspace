@@ -153,6 +153,7 @@ def test_qwen_vision_provider_factory_requires_complete_server_config() -> None:
     incomplete = Settings(
         session_secret="x" * 32,
         vision_ai_provider="qwen",
+        qwen_api_key=None,
         qwen_vision_model="fictional-model",
     )
     assert real_vision_provider_configured(incomplete) is False

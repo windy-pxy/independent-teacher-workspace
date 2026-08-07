@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useState } from "react";
 
+import { useActionDialog } from "@/components/action-dialog";
 import { EmptyState, ErrorNotice, PageHeader } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
 import type { Plan, PlanItem, PlanItemStatus, PlanRevision, StudentSubject } from "@/lib/types";
@@ -11,6 +12,7 @@ const statusLabels: Record<PlanItemStatus, string> = { NOT_STARTED: "未开始",
 
 export default function PlansPage() {
   const client = useQueryClient();
+  const openDialog = useActionDialog();
   const links = useQuery({ queryKey: ["student-subjects"], queryFn: () => api<StudentSubject[]>("/student-subjects") });
   const plans = useQuery({ queryKey: ["plans"], queryFn: () => api<Plan[]>("/teaching-plans") });
   const [selectedId, setSelectedId] = useState<string>();
@@ -22,8 +24,8 @@ export default function PlansPage() {
   const [error, setError] = useState<unknown>();
   async function refresh() { await Promise.all([client.invalidateQueries({ queryKey: ["plans"] }), client.invalidateQueries({ queryKey: ["dashboard"] })]); }
   async function createPlan(event: FormEvent) { event.preventDefault(); try { const row = await api<Plan>("/teaching-plans", { method: "POST", ...jsonBody({ ...newPlan, description: newPlan.description || null }) }); setNewPlan({ student_subject_id: "", name: "", description: "" }); setSelectedId(row.id); await refresh(); } catch (caught) { setError(caught); } }
-  async function createItem(event: FormEvent) { event.preventDefault(); if (!selected) return; const reason = window.prompt("请输入本次计划调整原因", "新增计划条目"); if (!reason) return; try { await api(`/teaching-plans/${selected.id}/items`, { method: "POST", ...jsonBody({ parent_id: newItem.parent_id || null, item_type: newItem.item_type, title: newItem.title, description: null, sort_order: Number(newItem.sort_order), estimated_minutes: Number(newItem.estimated_minutes), adjustment_reason: reason }) }); setNewItem({ title: "", item_type: "KNOWLEDGE_POINT", parent_id: "", estimated_minutes: "120", sort_order: "0" }); await refresh(); await client.invalidateQueries({ queryKey: ["plan-revisions", selected.id] }); } catch (caught) { setError(caught); } }
-  async function changeStatus(item: PlanItem, status: PlanItemStatus) { const reason = window.prompt("请输入进度调整原因", "教师手动更新教学进度"); if (!reason) return; const notes = window.prompt("进度备注（可为空）", item.progress_notes ?? ""); if (notes === null) return; try { await api(`/teaching-plan-items/${item.id}`, { method: "PUT", ...jsonBody({ parent_id: item.parent_id, item_type: item.item_type, title: item.title, description: item.description, sort_order: item.sort_order, estimated_minutes: item.estimated_minutes, actual_minutes: item.actual_minutes, status, progress_notes: notes || null, version: item.version, adjustment_reason: reason }) }); await refresh(); await client.invalidateQueries({ queryKey: ["plan-revisions", selected?.id] }); } catch (caught) { setError(caught); } }
+  async function createItem(event: FormEvent) { event.preventDefault(); if (!selected) return; const values = await openDialog({ title: "确认新增计划条目", description: newItem.title, fields: [{ name: "reason", label: "计划调整原因", value: "新增计划条目", required: true }] }); if (!values) return; try { await api(`/teaching-plans/${selected.id}/items`, { method: "POST", ...jsonBody({ parent_id: newItem.parent_id || null, item_type: newItem.item_type, title: newItem.title, description: null, sort_order: Number(newItem.sort_order), estimated_minutes: Number(newItem.estimated_minutes), adjustment_reason: values.reason }) }); setNewItem({ title: "", item_type: "KNOWLEDGE_POINT", parent_id: "", estimated_minutes: "120", sort_order: "0" }); await refresh(); await client.invalidateQueries({ queryKey: ["plan-revisions", selected.id] }); } catch (caught) { setError(caught); } }
+  async function changeStatus(item: PlanItem, status: PlanItemStatus) { const values = await openDialog({ title: "更新教学进度", description: `${item.title} → ${statusLabels[status]}`, fields: [{ name: "reason", label: "进度调整原因", value: "教师手动更新教学进度", required: true }, { name: "notes", label: "进度备注", value: item.progress_notes, type: "textarea" }] }); if (!values) return; try { await api(`/teaching-plan-items/${item.id}`, { method: "PUT", ...jsonBody({ parent_id: item.parent_id, item_type: item.item_type, title: item.title, description: item.description, sort_order: item.sort_order, estimated_minutes: item.estimated_minutes, actual_minutes: item.actual_minutes, status, progress_notes: values.notes || null, version: item.version, adjustment_reason: values.reason }) }); await refresh(); await client.invalidateQueries({ queryKey: ["plan-revisions", selected?.id] }); } catch (caught) { setError(caught); } }
 
   return <>
     <PageHeader title="教学计划与进度" description="计划按学生学科隔离；每次结构或进度调整都保存不可变快照和原因。" />

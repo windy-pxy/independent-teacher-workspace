@@ -1,5 +1,22 @@
 "use client";
 
+import {
+  Books,
+  CalendarBlank,
+  ChalkboardTeacher,
+  Exam,
+  Export,
+  FolderOpen,
+  GearSix,
+  MagicWand,
+  NotePencil,
+  SignOut,
+  SquaresFour,
+  Target,
+  TreeStructure,
+  UsersThree,
+  Wallet,
+} from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -9,19 +26,34 @@ import { api } from "@/lib/api";
 import type { AuthUser } from "@/lib/types";
 
 const navigation = [
-  ["/", "仪表盘"],
-  ["/students", "学生档案"],
-  ["/subjects", "学科"],
-  ["/plans", "教学计划"],
-  ["/lessons", "课程与课表"],
-  ["/lesson-plans", "AI 教案"],
-  ["/materials", "资料库"],
-  ["/exports", "导出与 Obsidian"],
-  ["/feedback", "课后反馈"],
-  ["/wrong-questions", "错题与复习"],
-  ["/practice", "针对性练习"],
-  ["/billing", "课时与收费"],
-  ["/settings/ai", "模板与 AI"],
+  {
+    label: "日常工作",
+    items: [
+      { href: "/", label: "仪表盘", icon: SquaresFour },
+      { href: "/lessons", label: "课程与课表", icon: CalendarBlank },
+      { href: "/lesson-plans", label: "AI 教案", icon: MagicWand },
+      { href: "/feedback", label: "课后反馈", icon: NotePencil },
+    ],
+  },
+  {
+    label: "教学档案",
+    items: [
+      { href: "/students", label: "学生档案", icon: UsersThree },
+      { href: "/subjects", label: "学科", icon: Books },
+      { href: "/plans", label: "教学计划", icon: TreeStructure },
+      { href: "/wrong-questions", label: "错题与复习", icon: Exam },
+      { href: "/practice", label: "针对性练习", icon: Target },
+    ],
+  },
+  {
+    label: "资料与管理",
+    items: [
+      { href: "/materials", label: "资料库", icon: FolderOpen },
+      { href: "/exports", label: "导出与 Obsidian", icon: Export },
+      { href: "/billing", label: "课时与收费", icon: Wallet },
+      { href: "/settings/ai", label: "模板与 AI", icon: GearSix },
+    ],
+  },
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -43,32 +75,45 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4">
-          <Link href="/" className="font-semibold tracking-tight">独立教师工作台</Link>
-          <div className="flex items-center gap-3 text-sm text-[var(--muted)]">
+    <div className="workspace-shell">
+      <header className="workspace-header">
+        <div className="workspace-header-inner">
+          <Link href="/" className="brand-lockup" aria-label="独立教师工作台首页">
+            <span className="brand-seal"><ChalkboardTeacher size={20} weight="duotone" /></span>
+            <span>
+              <span className="brand-title block">独立教师工作台</span>
+              <span className="brand-subtitle block">专注备课 · 用心教学</span>
+            </span>
+          </Link>
+          <div className="workspace-user">
             <span>{session.data?.username}</span>
-            <button className="button-secondary" type="button" onClick={logout}>退出</button>
+            <span className="workspace-avatar" aria-hidden="true">师</span>
+            <button className="button-secondary" type="button" onClick={logout}>
+              <SignOut size={17} />
+              <span className="hidden sm:inline">退出</span>
+            </button>
           </div>
         </div>
       </header>
-      <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 md:grid-cols-[190px_minmax(0,1fr)]">
-        <nav
-          aria-label="主导航"
-          className="flex gap-2 overflow-x-auto md:sticky md:top-24 md:max-h-[calc(100vh-7rem)] md:flex-col md:self-start md:overflow-x-visible md:overflow-y-auto"
-        >
-          {navigation.map(([href, label]) => (
-            <Link
-              key={href}
-              href={href}
-              className={`nav-link ${pathname === href ? "nav-link-active" : ""}`}
-            >
-              {label}
-            </Link>
+      <div className="workspace-body">
+        <nav aria-label="主导航" className="workspace-sidebar">
+          {navigation.map((group) => (
+            <div className="nav-group" key={group.label}>
+              <p className="nav-group-label">{group.label}</p>
+              {group.items.map((item) => {
+                const active = pathname === item.href;
+                const Icon = item.icon;
+                return (
+                  <Link key={item.href} href={item.href} className={`nav-link ${active ? "nav-link-active" : ""}`} aria-current={active ? "page" : undefined}>
+                    <Icon size={18} weight={active ? "fill" : "regular"} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           ))}
         </nav>
-        <main className="min-w-0">{children}</main>
+        <main className="workspace-main">{children}</main>
       </div>
     </div>
   );

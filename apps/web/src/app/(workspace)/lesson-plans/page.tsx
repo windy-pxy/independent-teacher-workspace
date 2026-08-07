@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
+import { useActionDialog } from "@/components/action-dialog";
 import { EmptyState, ErrorNotice, PageHeader } from "@/components/page-ui";
 import { ApiError, api, apiBlob, jsonBody } from "@/lib/api";
 import type {
@@ -109,6 +110,7 @@ function QuestionEditor({
 export default function LessonPlansPage() {
   const searchParams = useSearchParams();
   const client = useQueryClient();
+  const openDialog = useActionDialog();
   const lessons = useQuery({
     queryKey: ["lessons", "all"],
     queryFn: () => api<Lesson[]>("/lessons"),
@@ -203,12 +205,12 @@ export default function LessonPlansPage() {
 
   async function save() {
     if (!document.data || !draft) return;
-    const summary = window.prompt("请输入本次编辑说明", "教师修改结构化教案");
-    if (!summary) return;
+    const values = await openDialog({ title: "保存教案新版本", description: "当前编辑内容将作为不可变版本保存。", fields: [{ name: "summary", label: "本次编辑说明", value: "教师修改结构化教案", required: true }] });
+    if (!values) return;
     try {
       await api(`/lesson-documents/${document.data.id}`, {
         method: "PUT",
-        ...jsonBody({ content: draft, change_summary: summary, version: document.data.version }),
+        ...jsonBody({ content: draft, change_summary: values.summary, version: document.data.version }),
       });
       await client.invalidateQueries({ queryKey: ["lesson-document", lessonId] });
       await client.invalidateQueries({ queryKey: ["document-versions"] });
@@ -219,14 +221,12 @@ export default function LessonPlansPage() {
 
   async function review(action: "submit" | "approve" | "reject") {
     if (!document.data) return;
-    const reason = window.prompt(
-      action === "submit" ? "提交审核说明" : action === "approve" ? "批准说明" : "驳回原因",
-    );
-    if (!reason) return;
+    const values = await openDialog({ title: action === "submit" ? "提交教案审核" : action === "approve" ? "批准教案" : "驳回教案", tone: action === "reject" ? "danger" : "default", submitLabel: action === "approve" ? "确认批准" : action === "reject" ? "确认驳回" : "提交审核", fields: [{ name: "reason", label: action === "submit" ? "提交说明" : action === "approve" ? "批准说明" : "驳回原因", type: "textarea", required: true }] });
+    if (!values) return;
     try {
       await api(`/lesson-documents/${document.data.id}/${action}`, {
         method: "POST",
-        ...jsonBody({ reason, version: document.data.version }),
+        ...jsonBody({ reason: values.reason, version: document.data.version }),
       });
       await client.invalidateQueries({ queryKey: ["lesson-document", lessonId] });
     } catch (caught) {
@@ -236,14 +236,14 @@ export default function LessonPlansPage() {
 
   async function regenerate(section: string) {
     if (!document.data) return;
-    const instructions = window.prompt(`重新生成“${sectionLabels[section]}”的要求`);
-    if (!instructions) return;
+    const values = await openDialog({ title: `重新生成“${sectionLabels[section]}”`, description: "只会生成新的草稿版本，不会覆盖已批准内容。", fields: [{ name: "instructions", label: "生成要求", type: "textarea", required: true, placeholder: "说明希望保留、调整或补充的内容" }] });
+    if (!values) return;
     try {
       const queued = await api<AIJob>(
         `/lesson-documents/${document.data.id}/regenerate-section`,
         {
           method: "POST",
-          ...jsonBody({ section, instructions, version: document.data.version }),
+          ...jsonBody({ section, instructions: values.instructions, version: document.data.version }),
         },
       );
       setJobId(queued.id);

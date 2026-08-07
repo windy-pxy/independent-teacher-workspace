@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useMemo, useState } from "react";
 
+import { useActionDialog } from "@/components/action-dialog";
 import { EmptyState, ErrorNotice, PageHeader } from "@/components/page-ui";
 import { api, apiBlob, jsonBody } from "@/lib/api";
 
@@ -96,6 +97,7 @@ function localInputNow(): string {
 
 export default function BillingPage() {
   const client = useQueryClient();
+  const openDialog = useActionDialog();
   const [month, setMonth] = useState(() => new Date());
   const [periodMode, setPeriodMode] = useState<"month" | "week">("month");
   const mondayOffset = (month.getDay() + 6) % 7;
@@ -197,16 +199,14 @@ export default function BillingPage() {
     }
   }
   async function updatePricing(item: BillingLesson) {
-    const value = window.prompt("每小时单价（元）", centsToYuan(item.unit_price_cents));
-    if (value === null) return;
-    const cents = yuanToCents(value);
+    const values = await openDialog({ title: "调整课程单价", description: `${item.student_name} · ${item.theme}`, fields: [{ name: "value", label: "每小时单价（元）", type: "number", value: centsToYuan(item.unit_price_cents), min: 0, step: 0.01, required: true }, { name: "reason", label: "调整单价原因", type: "textarea", required: true }] });
+    if (!values) return;
+    const cents = yuanToCents(values.value);
     if (cents === null) return setError(new Error("单价格式不正确"));
-    const reason = window.prompt("调整单价原因");
-    if (!reason) return;
     try {
       await api(`/lessons/${item.lesson_id}/pricing`, {
         method: "PUT",
-        ...jsonBody({ unit_price_cents: cents, reason, version: item.version }),
+        ...jsonBody({ unit_price_cents: cents, reason: values.reason, version: item.version }),
       });
       await refresh();
     } catch (caught) {
@@ -214,16 +214,14 @@ export default function BillingPage() {
     }
   }
   async function overrideReceivable(item: BillingLesson) {
-    const value = window.prompt("人工应收金额（元）", centsToYuan(item.receivable_cents));
-    if (value === null) return;
-    const cents = yuanToCents(value);
+    const values = await openDialog({ title: "人工覆盖应收金额", description: `${item.student_name} · ${item.theme}。覆盖操作将写入审计记录。`, fields: [{ name: "value", label: "人工应收金额（元）", type: "number", value: centsToYuan(item.receivable_cents), min: 0, step: 0.01, required: true }, { name: "reason", label: "覆盖原因", type: "textarea", required: true }] });
+    if (!values) return;
+    const cents = yuanToCents(values.value);
     if (cents === null) return setError(new Error("应收金额格式不正确"));
-    const reason = window.prompt("必须填写覆盖原因");
-    if (!reason) return;
     try {
       await api(`/lessons/${item.lesson_id}/receivable-override`, {
         method: "POST",
-        ...jsonBody({ receivable_cents: cents, reason, version: item.version }),
+        ...jsonBody({ receivable_cents: cents, reason: values.reason, version: item.version }),
       });
       await refresh();
     } catch (caught) {
@@ -231,12 +229,12 @@ export default function BillingPage() {
     }
   }
   async function resetReceivable(item: BillingLesson) {
-    const reason = window.prompt("恢复自动计算的原因");
-    if (!reason) return;
+    const values = await openDialog({ title: "恢复自动计算", description: "应收金额将按实际时长和课程单价重新计算。", fields: [{ name: "reason", label: "恢复原因", type: "textarea", required: true }] });
+    if (!values) return;
     try {
       await api(`/lessons/${item.lesson_id}/receivable-reset`, {
         method: "POST",
-        ...jsonBody({ reason, version: item.version }),
+        ...jsonBody({ reason: values.reason, version: item.version }),
       });
       await refresh();
     } catch (caught) {
@@ -244,12 +242,12 @@ export default function BillingPage() {
     }
   }
   async function voidPayment(item: Payment) {
-    const reason = window.prompt("作废后相关分摊不再计入已收，请填写原因");
-    if (!reason) return;
+    const values = await openDialog({ title: "作废收款记录", description: "作废后相关分摊不再计入已收金额，操作不可直接撤销。", tone: "danger", submitLabel: "确认作废", fields: [{ name: "reason", label: "作废原因", type: "textarea", required: true }] });
+    if (!values) return;
     try {
       await api(`/payments/${item.id}/void`, {
         method: "POST",
-        ...jsonBody({ reason, version: item.version }),
+        ...jsonBody({ reason: values.reason, version: item.version }),
       });
       await refresh();
     } catch (caught) {
@@ -258,22 +256,17 @@ export default function BillingPage() {
   }
   async function addAllocation(payment: Payment) {
     if (!outstanding.length) return;
-    const options = outstanding
-      .map((item, index) => `${index + 1}. ${item.student_name} · ${item.theme}（未收 ${money.format(item.outstanding_cents / 100)}）`)
-      .join("\n");
-    const selected = window.prompt(`选择课程序号：\n${options}`, "1");
-    if (!selected) return;
-    const lesson = outstanding[Number(selected) - 1];
-    if (!lesson) return setError(new Error("课程序号无效"));
+    const available = outstanding.filter((item) => !payment.allocations.some((allocation) => allocation.lesson_id === item.lesson_id));
+    if (!available.length) return setError(new Error("没有可继续分摊的欠费课程"));
+    const initialLesson = available[0];
+    const values = await openDialog({ title: "新增收款分摊", description: `当前未分配 ${money.format(payment.unallocated_cents / 100)}`, fields: [{ name: "lesson_id", label: "欠费课程", type: "select", value: initialLesson.lesson_id, options: available.map((item) => ({ value: item.lesson_id, label: `${item.student_name} · ${item.theme}（未收 ${money.format(item.outstanding_cents / 100)}）` })) }, { name: "value", label: "分摊金额（元）", type: "number", value: centsToYuan(Math.min(payment.unallocated_cents, initialLesson.outstanding_cents)), min: 0.01, step: 0.01, required: true }], submitLabel: "确认分摊" });
+    if (!values) return;
+    const lesson = available.find((item) => item.lesson_id === values.lesson_id);
+    if (!lesson) return setError(new Error("所选课程无效"));
     if (payment.allocations.some((item) => item.lesson_id === lesson.lesson_id)) {
       return setError(new Error("该笔收款已分摊到这节课程"));
     }
-    const value = window.prompt(
-      "分摊金额（元）",
-      centsToYuan(Math.min(payment.unallocated_cents, lesson.outstanding_cents)),
-    );
-    if (!value) return;
-    const cents = yuanToCents(value);
+    const cents = yuanToCents(values.value);
     if (!cents) return setError(new Error("分摊金额格式不正确"));
     try {
       await api(`/payments/${payment.id}/allocations`, {

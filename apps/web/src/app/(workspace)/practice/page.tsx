@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
+import { useActionDialog } from "@/components/action-dialog";
 import { EmptyState, ErrorNotice, PageHeader } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
 import type { AIJob, StudentSubject } from "@/lib/types";
@@ -35,6 +36,7 @@ type Generated = { question_set: QuestionSet; job: AIJob };
 
 export default function PracticePage() {
   const client = useQueryClient();
+  const openDialog = useActionDialog();
   const subjects = useQuery({ queryKey: ["student-subjects"], queryFn: () => api<StudentSubject[]>("/student-subjects") });
   const wrongQuestions = useQuery({ queryKey: ["wrong-questions"], queryFn: () => api<WrongQuestion[]>("/wrong-questions") });
   const sets = useQuery({ queryKey: ["question-sets"], queryFn: () => api<QuestionSet[]>("/question-sets") });
@@ -92,10 +94,10 @@ export default function PracticePage() {
     }
   }
   async function transition(item: QuestionSet, action: "submit" | "approve" | "reject") {
-    const reason = window.prompt(action === "approve" ? "请确认每道题均已核对答案和解析，并填写批准说明" : "操作说明");
-    if (!reason) return;
+    const values = await openDialog({ title: action === "approve" ? "批准练习题集" : action === "reject" ? "驳回练习题集" : "提交练习题集审核", description: action === "approve" ? "请确认每道题均已核对答案与解析。" : item.title, tone: action === "reject" ? "danger" : "default", fields: [{ name: "reason", label: "操作说明", type: "textarea", required: true }] });
+    if (!values) return;
     try {
-      await api(`/question-sets/${item.id}/${action}`, { method: "POST", ...jsonBody({ reason, version: item.version }) });
+      await api(`/question-sets/${item.id}/${action}`, { method: "POST", ...jsonBody({ reason: values.reason, version: item.version }) });
       await refresh();
     } catch (caught) {
       setError(caught);
@@ -103,19 +105,15 @@ export default function PracticePage() {
   }
   async function edit(item: QuestionSet) {
     if (!item.current_version) return;
-    const nextTitle = window.prompt("练习标题", item.current_version.content.title);
-    if (!nextTitle) return;
-    const notes = window.prompt("教师备注", item.current_version.content.teacher_notes);
-    if (notes === null) return;
-    const reason = window.prompt("版本修改说明", "教师核对并调整练习信息");
-    if (!reason) return;
+    const values = await openDialog({ title: "编辑练习信息", width: "wide", fields: [{ name: "title", label: "练习标题", value: item.current_version.content.title, required: true }, { name: "notes", label: "教师备注", value: item.current_version.content.teacher_notes, type: "textarea" }, { name: "reason", label: "版本修改说明", value: "教师核对并调整练习信息", required: true }] });
+    if (!values) return;
     try {
       await api(`/question-sets/${item.id}`, {
         method: "PUT",
         ...jsonBody({
           version: item.version,
-          change_summary: reason,
-          content: { ...item.current_version.content, title: nextTitle, teacher_notes: notes },
+          change_summary: values.reason,
+          content: { ...item.current_version.content, title: values.title, teacher_notes: values.notes },
         }),
       });
       await refresh();

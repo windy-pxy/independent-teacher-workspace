@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useState } from "react";
 
+import { useActionDialog } from "@/components/action-dialog";
 import { EmptyState, ErrorNotice, PageHeader } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
 import type { Material, StudentSubject } from "@/lib/types";
@@ -16,6 +17,7 @@ const purposeLabels = {
 
 export default function MaterialsPage() {
   const client = useQueryClient();
+  const openDialog = useActionDialog();
   const subjects = useQuery({
     queryKey: ["student-subjects"],
     queryFn: () => api<StudentSubject[]>("/student-subjects"),
@@ -53,13 +55,13 @@ export default function MaterialsPage() {
   }
 
   async function archive(material: Material) {
-    const reason = window.prompt("请输入归档原因");
-    if (!reason) return;
+    const values = await openDialog({ title: `归档“${material.display_name}”`, tone: "danger", submitLabel: "确认归档", fields: [{ name: "reason", label: "归档原因", type: "textarea", required: true }] });
+    if (!values) return;
     try {
       setError(undefined);
       await api(`/materials/${material.id}/archive`, {
         method: "POST",
-        ...jsonBody({ version: material.version, reason }),
+        ...jsonBody({ version: material.version, reason: values.reason }),
       });
       await client.invalidateQueries({ queryKey: ["materials"] });
     } catch (caught) {

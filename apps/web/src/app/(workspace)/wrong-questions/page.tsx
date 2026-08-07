@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useEffect, useState } from "react";
 
+import { useActionDialog } from "@/components/action-dialog";
 import { EmptyState, ErrorNotice, PageHeader } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
 import type { AIJob, StudentSubject } from "@/lib/types";
@@ -64,6 +65,7 @@ const blank = {
 
 export default function WrongQuestionsPage() {
   const client = useQueryClient();
+  const openDialog = useActionDialog();
   const subjects = useQuery({
     queryKey: ["student-subjects"],
     queryFn: () => api<StudentSubject[]>("/student-subjects"),
@@ -150,14 +152,12 @@ export default function WrongQuestionsPage() {
     }
   }
   async function transition(item: WrongQuestion, action: "submit" | "approve" | "reject") {
-    const reason = window.prompt(
-      action === "approve" ? "请确认识别结果、答案和解析均已人工核对，并填写说明" : "操作说明",
-    );
-    if (!reason) return;
+    const values = await openDialog({ title: action === "approve" ? "批准错题记录" : action === "reject" ? "驳回错题草稿" : "提交错题审核", description: action === "approve" ? "请确认识别结果、答案和解析均已人工核对。" : item.current_version.content.question_text, tone: action === "reject" ? "danger" : "default", fields: [{ name: "reason", label: "操作说明", type: "textarea", required: true }] });
+    if (!values) return;
     try {
       await api(`/wrong-questions/${item.id}/${action}`, {
         method: "POST",
-        ...jsonBody({ reason, version: item.version }),
+        ...jsonBody({ reason: values.reason, version: item.version }),
       });
       await refresh();
     } catch (caught) {
@@ -166,28 +166,20 @@ export default function WrongQuestionsPage() {
   }
   async function editDraft(item: WrongQuestion) {
     const content = item.current_version.content;
-    const questionText = window.prompt("题目文字", content.question_text);
-    if (!questionText) return;
-    const correctAnswer = window.prompt("正确答案", content.correct_answer);
-    if (correctAnswer === null) return;
-    const errorReason = window.prompt("错误原因", content.error_reason);
-    if (errorReason === null) return;
-    const analysis = window.prompt("解析", content.analysis);
-    if (analysis === null) return;
-    const summary = window.prompt("版本修改说明", "教师核对并修正图片识别结果");
-    if (!summary) return;
+    const values = await openDialog({ title: "核对并编辑错题", description: "图片识别结果必须由教师核对后再提交审核。", width: "wide", fields: [{ name: "question_text", label: "题目文字", value: content.question_text, type: "textarea", required: true }, { name: "correct_answer", label: "正确答案", value: content.correct_answer, type: "textarea" }, { name: "error_reason", label: "错误原因", value: content.error_reason, type: "textarea" }, { name: "analysis", label: "解析", value: content.analysis, type: "textarea" }, { name: "summary", label: "版本修改说明", value: "教师核对并修正图片识别结果", required: true }] });
+    if (!values) return;
     try {
       await api(`/wrong-questions/${item.id}`, {
         method: "PUT",
         ...jsonBody({
           version: item.version,
-          change_summary: summary,
+          change_summary: values.summary,
           content: {
             ...content,
-            question_text: questionText,
-            correct_answer: correctAnswer,
-            error_reason: errorReason,
-            analysis,
+            question_text: values.question_text,
+            correct_answer: values.correct_answer,
+            error_reason: values.error_reason,
+            analysis: values.analysis,
           },
         }),
       });
@@ -197,14 +189,12 @@ export default function WrongQuestionsPage() {
     }
   }
   async function review(item: WrongQuestion) {
-    const result = window.prompt("复习结果：UNLEARNED / WEAK / DEVELOPING / PROFICIENT / MASTERED", item.mastery_status);
-    if (!result || !(result in levels)) return;
-    const notes = window.prompt("本次复习记录");
-    if (!notes) return;
+    const values = await openDialog({ title: "记录本次复习", description: `${item.student_name} · ${item.subject_name}`, fields: [{ name: "result", label: "复习结果", type: "select", value: item.mastery_status, options: Object.entries(levels).map(([value, label]) => ({ value, label })) }, { name: "notes", label: "本次复习记录", type: "textarea", required: true }] });
+    if (!values || !(values.result in levels)) return;
     try {
       await api(`/wrong-questions/${item.id}/reviews`, {
         method: "POST",
-        ...jsonBody({ result_level: result, notes, version: item.version }),
+        ...jsonBody({ result_level: values.result, notes: values.notes, version: item.version }),
       });
       await refresh();
     } catch (caught) {

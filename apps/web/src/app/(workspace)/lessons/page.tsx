@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 
+import { useActionDialog } from "@/components/action-dialog";
 import { EmptyState, ErrorNotice, PageHeader } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
 import type { Lesson, LessonType, StudentSubject } from "@/lib/types";
@@ -25,6 +26,7 @@ function MonthCalendar({ month, lessons }: { month: Date; lessons: Lesson[] }) {
 
 export default function LessonsPage() {
   const client = useQueryClient();
+  const openDialog = useActionDialog();
   const [month, setMonth] = useState(() => new Date());
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
@@ -38,9 +40,9 @@ export default function LessonsPage() {
 
   async function refresh() { await Promise.all([client.invalidateQueries({ queryKey: ["lessons"] }), client.invalidateQueries({ queryKey: ["plans"] }), client.invalidateQueries({ queryKey: ["dashboard"] })]); }
   async function create(event: FormEvent) { event.preventDefault(); try { await api("/lessons", { method: "POST", ...jsonBody({ ...form, scheduled_start: new Date(form.scheduled_start).toISOString(), planned_minutes: Number(form.planned_minutes), unit_price_cents: yuanToCents(form.unit_price_yuan), lesson_type: form.lesson_type, special_requirements: form.special_requirements || null, plan_item_ids: [], makeup_for_lesson_id: form.makeup_for_lesson_id || null }) }); setForm({ student_subject_id: "", scheduled_start: "", planned_minutes: "120", unit_price_yuan: "0", lesson_type: "NEW_LESSON", theme: "", special_requirements: "", makeup_for_lesson_id: "" }); await refresh(); } catch (caught) { setError(caught); } }
-  async function edit(row: Lesson) { const theme = window.prompt("课程主题", row.theme); if (!theme) return; const time = window.prompt("新时间（例如 2026-08-10T18:30）", new Date(row.scheduled_start).toISOString().slice(0,16)); if (!time) return; try { await api(`/lessons/${row.id}`, { method: "PUT", ...jsonBody({ scheduled_start: new Date(time).toISOString(), planned_minutes: row.planned_minutes, unit_price_cents: row.unit_price_cents, lesson_type: row.lesson_type, theme, special_requirements: row.special_requirements, plan_item_ids: row.plan_item_ids, version: row.version }) }); await refresh(); } catch (caught) { setError(caught); } }
-  async function cancel(row: Lesson) { const reason = window.prompt("请输入取消原因"); if (!reason) return; try { await api(`/lessons/${row.id}/cancel`, { method: "POST", ...jsonBody({ reason, version: row.version }) }); await refresh(); } catch (caught) { setError(caught); } }
-  async function reschedule(row: Lesson) { const time = window.prompt("调课后的时间（例如 2026-08-10T18:30）"); if (!time) return; const reason = window.prompt("调课原因"); if (!reason) return; try { await api(`/lessons/${row.id}/reschedule`, { method: "POST", ...jsonBody({ scheduled_start: new Date(time).toISOString(), planned_minutes: row.planned_minutes, reason, version: row.version }) }); await refresh(); } catch (caught) { setError(caught); } }
+  async function edit(row: Lesson) { const values = await openDialog({ title: "编辑课程", width: "wide", fields: [{ name: "theme", label: "课程主题", value: row.theme, required: true }, { name: "scheduled_start", label: "上课时间", type: "datetime-local", value: new Date(row.scheduled_start).toISOString().slice(0,16), required: true }, { name: "special_requirements", label: "特殊要求", type: "textarea", value: row.special_requirements }] }); if (!values) return; try { await api(`/lessons/${row.id}`, { method: "PUT", ...jsonBody({ scheduled_start: new Date(values.scheduled_start).toISOString(), planned_minutes: row.planned_minutes, unit_price_cents: row.unit_price_cents, lesson_type: row.lesson_type, theme: values.theme, special_requirements: values.special_requirements || null, plan_item_ids: row.plan_item_ids, version: row.version }) }); await refresh(); } catch (caught) { setError(caught); } }
+  async function cancel(row: Lesson) { const values = await openDialog({ title: "取消课程", description: `${row.student_name} · ${row.theme}`, tone: "danger", submitLabel: "确认取消", fields: [{ name: "reason", label: "取消原因", type: "textarea", required: true }] }); if (!values) return; try { await api(`/lessons/${row.id}/cancel`, { method: "POST", ...jsonBody({ reason: values.reason, version: row.version }) }); await refresh(); } catch (caught) { setError(caught); } }
+  async function reschedule(row: Lesson) { const values = await openDialog({ title: "调整课程时间", description: `${row.student_name} · ${row.theme}`, fields: [{ name: "scheduled_start", label: "调课后的时间", type: "datetime-local", value: new Date(row.scheduled_start).toISOString().slice(0,16), required: true }, { name: "reason", label: "调课原因", type: "textarea", required: true }] }); if (!values) return; try { await api(`/lessons/${row.id}/reschedule`, { method: "POST", ...jsonBody({ scheduled_start: new Date(values.scheduled_start).toISOString(), planned_minutes: row.planned_minutes, reason: values.reason, version: row.version }) }); await refresh(); } catch (caught) { setError(caught); } }
   function openComplete(row: Lesson) { setCompleting(row); setActualMinutes(String(row.planned_minutes)); }
   async function complete(event: FormEvent) { event.preventDefault(); if (!completing) return; try { await api(`/lessons/${completing.id}/complete`, { method: "POST", ...jsonBody({ actual_minutes: Number(actualMinutes), progress_updates: [], adjustment_reason: "课程已完成，计划进度等待课后反馈审核" }) }); setCompleting(undefined); await refresh(); } catch (caught) { setError(caught); } }
 

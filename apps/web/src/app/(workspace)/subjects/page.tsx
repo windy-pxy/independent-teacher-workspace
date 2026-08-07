@@ -3,12 +3,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useState } from "react";
 
+import { useActionDialog } from "@/components/action-dialog";
 import { EmptyState, ErrorNotice, PageHeader } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
 import type { Subject } from "@/lib/types";
 
 export default function SubjectsPage() {
   const queryClient = useQueryClient();
+  const openDialog = useActionDialog();
   const query = useQuery({ queryKey: ["subjects"], queryFn: () => api<Subject[]>("/subjects") });
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -23,21 +25,31 @@ export default function SubjectsPage() {
   }
 
   async function edit(row: Subject) {
-    const nextName = window.prompt("学科名称", row.name);
-    if (!nextName) return;
-    const nextDescription = window.prompt("学科说明（可为空）", row.description ?? "");
-    if (nextDescription === null) return;
+    const values = await openDialog({
+      title: "编辑学科",
+      fields: [
+        { name: "name", label: "学科名称", value: row.name, required: true },
+        { name: "description", label: "学科说明", value: row.description, type: "textarea" },
+      ],
+    });
+    if (!values) return;
     try {
-      await api(`/subjects/${row.id}`, { method: "PUT", ...jsonBody({ name: nextName, description: nextDescription || null, version: row.version }) });
+      await api(`/subjects/${row.id}`, { method: "PUT", ...jsonBody({ name: values.name, description: values.description || null, version: row.version }) });
       await queryClient.invalidateQueries({ queryKey: ["subjects"] });
     } catch (caught) { setError(caught); }
   }
 
   async function archive(row: Subject) {
-    const reason = window.prompt(`确认归档“${row.name}”？请输入原因`);
-    if (!reason) return;
+    const values = await openDialog({
+      title: `归档“${row.name}”`,
+      description: "归档前请确认没有仍在使用该学科的教学安排。",
+      tone: "danger",
+      submitLabel: "确认归档",
+      fields: [{ name: "reason", label: "归档原因", type: "textarea", required: true }],
+    });
+    if (!values) return;
     try {
-      await api(`/subjects/${row.id}/archive`, { method: "POST", ...jsonBody({ version: row.version, reason }) });
+      await api(`/subjects/${row.id}/archive`, { method: "POST", ...jsonBody({ version: row.version, reason: values.reason }) });
       await queryClient.invalidateQueries({ queryKey: ["subjects"] });
     } catch (caught) { setError(caught); }
   }

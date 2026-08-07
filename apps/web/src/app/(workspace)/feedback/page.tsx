@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
+import { useActionDialog } from "@/components/action-dialog";
 import { EmptyState, ErrorNotice, PageHeader } from "@/components/page-ui";
 import { ApiError, api, jsonBody } from "@/lib/api";
 import type {
@@ -58,6 +59,7 @@ function LinesEditor({
 export default function FeedbackPage() {
   const searchParams = useSearchParams();
   const client = useQueryClient();
+  const openDialog = useActionDialog();
   const lessons = useQuery({
     queryKey: ["lessons", "feedback"],
     queryFn: () => api<Lesson[]>("/lessons"),
@@ -195,13 +197,13 @@ export default function FeedbackPage() {
   }
   async function saveStructured() {
     if (!feedback.data || !draft) return;
-    const summary = window.prompt("请填写本次修改说明", "教师复核并修订结构化反馈");
-    if (!summary) return;
+    const values = await openDialog({ title: "保存反馈新版本", description: "保存后仍为草稿，批准前不会同步正式进度。", fields: [{ name: "summary", label: "本次修改说明", value: "教师复核并修订结构化反馈", required: true }] });
+    if (!values) return;
     setBusy(true);
     try {
       await api(`/lesson-feedbacks/${feedback.data.id}`, {
         method: "PUT",
-        ...jsonBody({ content: draft, change_summary: summary, version: feedback.data.version }),
+        ...jsonBody({ content: draft, change_summary: values.summary, version: feedback.data.version }),
       });
       await refresh();
     } catch (caught) {
@@ -212,15 +214,13 @@ export default function FeedbackPage() {
   }
   async function transition(action: "submit" | "approve" | "reject") {
     if (!feedback.data) return;
-    const reason = window.prompt(
-      action === "approve" ? "批准后将正式同步进度与掌握度，请填写确认说明" : "请填写操作说明",
-    );
-    if (!reason) return;
+    const values = await openDialog({ title: action === "approve" ? "批准课后反馈" : action === "reject" ? "驳回课后反馈" : "提交课后反馈审核", description: action === "approve" ? "批准后将正式同步教学进度与知识点掌握度。" : undefined, tone: action === "reject" ? "danger" : "default", submitLabel: action === "approve" ? "确认批准并同步" : action === "reject" ? "确认驳回" : "提交审核", fields: [{ name: "reason", label: "操作说明", type: "textarea", required: true }] });
+    if (!values) return;
     setBusy(true);
     try {
       await api(`/lesson-feedbacks/${feedback.data.id}/${action}`, {
         method: "POST",
-        ...jsonBody({ reason, version: feedback.data.version }),
+        ...jsonBody({ reason: values.reason, version: feedback.data.version }),
       });
       await refresh();
     } catch (caught) {
