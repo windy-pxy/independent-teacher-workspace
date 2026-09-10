@@ -1,13 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useState } from "react";
 
 import { ErrorNotice } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
+import { clearSessionCache } from "@/lib/session-cache";
 
 export default function LoginPage() {
   const router = useRouter();
+  const client = useQueryClient();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<unknown>();
@@ -22,6 +25,7 @@ export default function LoginPage() {
         method: "POST",
         ...jsonBody({ username, password }),
       });
+      await clearSessionCache(client);
       router.replace("/");
       router.refresh();
     } catch (caught) {

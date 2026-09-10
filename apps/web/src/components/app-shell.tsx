@@ -17,13 +17,15 @@ import {
   UsersThree,
   Wallet,
 } from "@phosphor-icons/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
 import type { AuthUser } from "@/lib/types";
+import { clearSessionCache } from "@/lib/session-cache";
+import { ErrorNotice } from "@/components/page-ui";
 
 const navigation = [
   {
@@ -59,6 +61,9 @@ const navigation = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const client = useQueryClient();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<unknown>();
   const session = useQuery({ queryKey: ["auth", "me"], queryFn: () => api<AuthUser>("/auth/me") });
 
   useEffect(() => {
@@ -69,10 +74,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (session.error) return <main className="grid min-h-screen place-items-center">正在前往登录页…</main>;
 
   async function logout() {
-    await api<void>("/auth/logout", { method: "POST" });
-    router.replace("/login");
-    router.refresh();
+    setLoggingOut(true);
+    setLogoutError(undefined);
+    try {
+      await api<void>("/auth/logout", { method: "POST" });
+      await clearSessionCache(client);
+      window.location.replace("/login");
+    } catch (caught) {
+      setLogoutError(caught);
+      setLoggingOut(false);
+    }
   }
+
+  if (loggingOut) return <main className="grid min-h-screen place-items-center" role="status">正在退出登录…</main>;
 
   return (
     <div className="workspace-shell">
@@ -113,7 +127,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           ))}
         </nav>
-        <main className="workspace-main">{children}</main>
+        <main className="workspace-main">{logoutError ? <ErrorNotice error={logoutError} /> : null}{children}</main>
       </div>
     </div>
   );

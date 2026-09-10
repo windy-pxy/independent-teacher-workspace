@@ -93,6 +93,34 @@ async def test_student_records_are_isolated_by_owner(
 
 
 @pytest.mark.asyncio
+async def test_saved_student_survives_logout_and_fresh_browser_session(
+    phase1_context: tuple[AsyncClient, async_sessionmaker[AsyncSession]],
+) -> None:
+    client, _ = phase1_context
+    headers = await login(client)
+    created = await client.post(
+        "/api/v1/students",
+        json={"display_name": "虚构持久化学生", "grade": "八年级"},
+        headers=headers,
+    )
+    assert created.status_code == 201, created.text
+    student_id = created.json()["id"]
+    session_cookie = client.cookies.get("teacher_workspace_session")
+    assert (await client.post("/api/v1/auth/logout", headers=headers)).status_code == 204
+    assert (await client.get("/api/v1/students")).status_code == 401
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as fresh:
+        assert session_cookie
+        fresh.cookies.set("teacher_workspace_session", session_cookie)
+        assert (await fresh.get("/api/v1/students")).status_code == 401
+        fresh.cookies.clear()
+        await login(fresh)
+        restored = await fresh.get(f"/api/v1/students/{student_id}")
+        assert restored.status_code == 200
+        assert restored.json()["display_name"] == "虚构持久化学生"
+        assert restored.json()["grade"] == "八年级"
+
+
+@pytest.mark.asyncio
 async def test_auth_requires_csrf_and_logout(phase1_context: tuple[AsyncClient, object]) -> None:
     client, _ = phase1_context
     unauthorized = await client.get("/api/v1/students")
