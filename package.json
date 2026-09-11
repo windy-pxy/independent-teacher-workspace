@@ -37,6 +37,7 @@
     "security:static": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.security_check",
     "security:dependencies": "pnpm audit --audit-level high && cross-env PYTHONUTF8=1 uv run --project apps/backend --no-sync pip-audit",
     "performance:smoke": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.performance_smoke",
+    "validate:multitenant": "uv run --project apps/backend --no-sync python scripts/validate_multitenant_postgres.py --browser",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm api:generate && pnpm build && pnpm security:static",
     "check:release": "pnpm check && pnpm security:dependencies && docker compose config --quiet && docker compose -f compose.yaml -f compose.production.yaml config --quiet && docker compose -f compose.yaml -f compose.validation.yaml config --quiet"
   },

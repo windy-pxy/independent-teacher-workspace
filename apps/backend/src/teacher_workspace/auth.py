@@ -108,6 +108,15 @@ async def require_csrf(
     settings: SettingsDep,
 ) -> User:
     validate_origin(request, settings)
+    expected_user_id = request.headers.get("X-Expected-User-ID")
+    if expected_user_id and not secrets.compare_digest(expected_user_id, str(context.user.id)):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "ACCOUNT_CONTEXT_CHANGED",
+                "message": "此标签页的登录账户已改变。为避免资料保存到错误账户，请刷新后继续",
+            },
+        )
     cookie_token = request.cookies.get(f"{settings.session_cookie_name}_csrf")
     header_token = request.headers.get("X-CSRF-Token")
     if (

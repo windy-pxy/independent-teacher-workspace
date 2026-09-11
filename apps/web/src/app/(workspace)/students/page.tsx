@@ -8,6 +8,7 @@ import { useActionDialog } from "@/components/action-dialog";
 import { EmptyState, ErrorNotice, PageHeader } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
 import type { Student, StudentSubject, Subject } from "@/lib/types";
+import { useUnsavedNavigation } from "@/lib/use-unsaved-navigation";
 
 const blankStudent = {
   display_name: "",
@@ -30,6 +31,7 @@ export default function StudentsPage() {
   const [subjectId, setSubjectId] = useState("");
   const [textbook, setTextbook] = useState("");
   const [error, setError] = useState<unknown>();
+  const unsaved = useUnsavedNavigation(Object.values(form).some(Boolean));
   const selected = students.data?.find((row) => row.id === selectedId) ?? students.data?.[0];
   const selectedLinks = useMemo(
     () => links.data?.filter((row) => row.student_id === selected?.id) ?? [],
@@ -166,6 +168,16 @@ export default function StudentsPage() {
     <>
       <PageHeader title="学生档案" description="通用情况保存在学生档案；教材、基础、目标与要求按学科独立保存。" />
       {error ? <ErrorNotice error={error} /> : null}
+      {unsaved.pendingHref ? (
+        <section className="card mb-5 border-l-4 border-l-[var(--cinnabar)]" role="alert">
+          <h2 className="font-semibold">新增学生资料还没有保存</h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">现在离开会丢失刚才填写的内容。你可以留在本页完成保存，或确认放弃。</p>
+          <div className="mt-4 flex gap-3">
+            <button className="button-primary" type="button" onClick={unsaved.stay}>留在本页</button>
+            <button className="button-secondary" type="button" onClick={unsaved.leave}>放弃并离开</button>
+          </div>
+        </section>
+      ) : null}
       <div className="mt-5 grid gap-5 xl:grid-cols-[250px_minmax(0,1fr)_320px]">
         <section className="card h-fit p-0! overflow-hidden">
           <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-4">

@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { PageHeader, ErrorNotice } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
 import { clearSessionCache } from "@/lib/session-cache";
+import { broadcastAuthChanged, clearTabUserId } from "@/lib/account-context";
 
 type Session = { id: string; created_at: string; expires_at: string; is_current: boolean };
 
@@ -30,6 +31,8 @@ export default function AccountPage() {
     setBusy(true); setError(undefined);
     try {
       await api<void>("/auth/password", { method: "POST", ...jsonBody({ current_password: values.get("current"), new_password: values.get("password") }) });
+      clearTabUserId();
+      broadcastAuthChanged();
       await clearSessionCache(client);
       window.location.replace("/login");
     } catch (caught) { setError(caught); } finally { setBusy(false); }

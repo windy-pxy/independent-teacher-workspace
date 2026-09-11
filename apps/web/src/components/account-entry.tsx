@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { ErrorNotice } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
+import { broadcastAuthChanged, clearTabUserId } from "@/lib/account-context";
 
 export function AccountEntry({ mode }: { mode: "register" | "recover" }) {
   const [enabled, setEnabled] = useState<boolean>();
@@ -43,6 +44,8 @@ export function AccountEntry({ mode }: { mode: "register" | "recover" }) {
         await api<void>("/auth/reset-password", { method: "POST", ...jsonBody({
           username, new_password: password, recovery_code: String(values.get("recovery_code") ?? "").trim(),
         }) });
+        clearTabUserId();
+        broadcastAuthChanged();
         setDone(true);
       }
     } catch (caught) { setError(caught); } finally { setBusy(false); }

@@ -8,6 +8,7 @@ import { FormEvent, useState } from "react";
 import { ErrorNotice } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
 import { clearSessionCache } from "@/lib/session-cache";
+import { broadcastAuthChanged, clearTabUserId } from "@/lib/account-context";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,6 +27,8 @@ export default function LoginPage() {
         method: "POST",
         ...jsonBody({ username, password }),
       });
+      clearTabUserId();
+      broadcastAuthChanged();
       await clearSessionCache(client);
       router.replace("/");
       router.refresh();

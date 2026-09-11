@@ -5,11 +5,13 @@ import { ApiError, api, apiBlob, jsonBody } from "./api";
 describe("API client", () => {
   afterEach(() => {
     document.cookie = "teacher_workspace_session_csrf=; Max-Age=0; path=/";
+    window.sessionStorage.clear();
     vi.restoreAllMocks();
   });
 
   it("uses the same-origin API prefix and sends CSRF on writes", async () => {
     document.cookie = "teacher_workspace_session_csrf=test%20csrf; path=/";
+    window.sessionStorage.setItem("teacher-workspace:tab-user-id", "teacher-1");
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -25,7 +27,28 @@ describe("API client", () => {
     );
     const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
     expect(new Headers(request.headers).get("X-CSRF-Token")).toBe("test csrf");
+    expect(new Headers(request.headers).get("X-Expected-User-ID")).toBe("teacher-1");
     expect(new Headers(request.headers).get("Content-Type")).toBe("application/json");
+  });
+
+  it("notifies the current page when the server detects an account switch", async () => {
+    window.sessionStorage.setItem("teacher-workspace:tab-user-id", "teacher-1");
+    const changed = vi.fn();
+    window.addEventListener("teacher-workspace:context-mismatch", changed);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: async () => ({ code: "ACCOUNT_CONTEXT_CHANGED", message: "账户已改变" }),
+      }),
+    );
+
+    await expect(api("/students", { method: "POST" })).rejects.toMatchObject({
+      code: "ACCOUNT_CONTEXT_CHANGED",
+    });
+    expect(changed).toHaveBeenCalledOnce();
+    window.removeEventListener("teacher-workspace:context-mismatch", changed);
   });
 
   it("preserves the backend error code without exposing response internals", async () => {
@@ -45,6 +68,7 @@ describe("API client", () => {
 
   it("downloads approved Word documents with CSRF and the server filename", async () => {
     document.cookie = "teacher_workspace_session_csrf=download-token; path=/";
+    window.sessionStorage.setItem("teacher-workspace:tab-user-id", "teacher-1");
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       headers: new Headers({

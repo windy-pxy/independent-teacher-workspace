@@ -137,6 +137,47 @@ async def test_auth_requires_csrf_and_logout(phase1_context: tuple[AsyncClient, 
 
 
 @pytest.mark.asyncio
+async def test_stale_tab_cannot_write_after_account_cookie_changes(
+    phase1_context: tuple[AsyncClient, async_sessionmaker[AsyncSession]],
+) -> None:
+    client, factory = phase1_context
+    first_headers = await login(client)
+    first_user = (await client.get("/api/v1/auth/me")).json()
+    first_headers["X-Expected-User-ID"] = first_user["id"]
+
+    async with factory() as session, session.begin():
+        second = User(
+            username="second-active-teacher",
+            password_hash=PasswordHash.recommended().hash("second-fictional-password"),
+        )
+        session.add(second)
+    client.cookies.clear()
+    second_headers = await login(client, "second-active-teacher", "second-fictional-password")
+    second_user = (await client.get("/api/v1/auth/me")).json()
+    stale_headers = {
+        **second_headers,
+        "X-Expected-User-ID": first_user["id"],
+    }
+
+    blocked = await client.post(
+        "/api/v1/students",
+        json={"display_name": "不应误存的虚构学生"},
+        headers=stale_headers,
+    )
+    assert blocked.status_code == 409
+    assert blocked.json()["code"] == "ACCOUNT_CONTEXT_CHANGED"
+    assert (await client.get("/api/v1/students")).json() == []
+
+    second_headers["X-Expected-User-ID"] = second_user["id"]
+    saved = await client.post(
+        "/api/v1/students",
+        json={"display_name": "第二位教师的虚构学生"},
+        headers=second_headers,
+    )
+    assert saved.status_code == 201
+
+
+@pytest.mark.asyncio
 async def test_student_plan_lesson_progress_flow(
     phase1_context: tuple[AsyncClient, async_sessionmaker[AsyncSession]],
 ) -> None:

@@ -413,21 +413,6 @@ async def update_student(
 ) -> StudentResponse:
     entity = await owned_student(session, user, student_id)
     check_version(entity.version, payload.version)
-    planned_lessons = int(
-        await session.scalar(
-            select(func.count())
-            .select_from(Lesson)
-            .join(StudentSubject, StudentSubject.id == Lesson.student_subject_id)
-            .where(
-                StudentSubject.student_id == entity.id,
-                Lesson.status == LessonStatus.PLANNED,
-                Lesson.archived_at.is_(None),
-            )
-        )
-        or 0
-    )
-    if planned_lessons:
-        raise problem("STUDENT_HAS_PLANNED_LESSONS", "请先取消或调走该学生计划中的课程", 409)
     for key, value in payload.model_dump(exclude={"version"}).items():
         setattr(entity, key, value)
     entity.version += 1
@@ -449,6 +434,21 @@ async def archive_student(
 ) -> StudentResponse:
     entity = await owned_student(session, user, student_id)
     check_version(entity.version, payload.version)
+    planned_lessons = int(
+        await session.scalar(
+            select(func.count())
+            .select_from(Lesson)
+            .join(StudentSubject, StudentSubject.id == Lesson.student_subject_id)
+            .where(
+                StudentSubject.student_id == entity.id,
+                Lesson.status == LessonStatus.PLANNED,
+                Lesson.archived_at.is_(None),
+            )
+        )
+        or 0
+    )
+    if planned_lessons:
+        raise problem("STUDENT_HAS_PLANNED_LESSONS", "请先取消或调走该学生计划中的课程", 409)
     entity.archived_at = utc_now()
     entity.version += 1
     audit(
