@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from teacher_workspace.auth import CsrfUserDep, UserDep
+from teacher_workspace.auth import AIUserDep, CsrfUserDep, UserDep
 from teacher_workspace.config import get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.docx_generator import (
@@ -278,7 +278,7 @@ async def update_prompt_template(
 async def generate_lesson_document(
     lesson_id: uuid.UUID,
     payload: GenerateLessonPlanRequest,
-    _: CsrfUserDep,
+    _: AIUserDep,
     user: UserDep,
     session: SessionDep,
 ) -> AIJobResponse:
@@ -447,7 +447,7 @@ async def save_lesson_document(
 async def regenerate_document_section(
     document_id: uuid.UUID,
     payload: RegenerateSectionRequest,
-    _: CsrfUserDep,
+    _: AIUserDep,
     user: UserDep,
     session: SessionDep,
 ) -> AIJobResponse:

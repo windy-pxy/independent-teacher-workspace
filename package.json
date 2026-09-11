@@ -41,6 +41,7 @@
     "check:release": "pnpm check && pnpm security:dependencies && docker compose config --quiet && docker compose -f compose.yaml -f compose.production.yaml config --quiet && docker compose -f compose.yaml -f compose.validation.yaml config --quiet"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "openapi-typescript": "^7.10.1"

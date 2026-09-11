@@ -109,7 +109,9 @@ async def validation_exception_handler(
             request,
             "VALIDATION_ERROR",
             "Request validation failed",
-            jsonable_encoder(exc.errors()),
+            jsonable_encoder(
+                [{"loc": error["loc"], "type": error["type"]} for error in exc.errors()]
+            ),
         ),
     )
 

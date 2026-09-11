@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from teacher_workspace.auth import CsrfUserDep, UserDep
+from teacher_workspace.auth import AIUserDep, CsrfUserDep, UserDep
 from teacher_workspace.config import get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.feedback_contract import LessonFeedbackContent
@@ -297,7 +297,7 @@ async def create_feedback_draft(
 async def organize_feedback(
     feedback_id: uuid.UUID,
     payload: FeedbackOrganizeRequest,
-    _: CsrfUserDep,
+    _: AIUserDep,
     user: UserDep,
     session: SessionDep,
 ) -> FeedbackAIJobResponse:

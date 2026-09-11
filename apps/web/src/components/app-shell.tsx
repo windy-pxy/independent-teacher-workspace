@@ -54,6 +54,7 @@ const navigation = [
       { href: "/exports", label: "导出与 Obsidian", icon: Export },
       { href: "/billing", label: "课时与收费", icon: Wallet },
       { href: "/settings/ai", label: "模板与 AI", icon: GearSix },
+      { href: "/account", label: "账户安全", icon: GearSix },
     ],
   },
 ] as const;

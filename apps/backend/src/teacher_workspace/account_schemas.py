@@ -1,0 +1,55 @@
+from datetime import datetime
+from typing import Annotated
+from uuid import UUID
+
+from pydantic import BaseModel, Field, model_validator
+
+Password = Annotated[str, Field(min_length=12, max_length=200)]
+
+
+class RegisterRequest(BaseModel):
+    username: str = Field(pattern=r"^[a-z][a-z0-9_-]{2,39}$")
+    password: Password
+    password_confirmation: Password
+
+    @model_validator(mode="after")
+    def matching_passwords(self) -> "RegisterRequest":
+        if self.password != self.password_confirmation:
+            raise ValueError("Passwords do not match")
+        if self.password.isspace():
+            raise ValueError("Password cannot be blank")
+        return self
+
+
+class RecoveryResponse(BaseModel):
+    recovery_code: str
+
+
+class RegisterResponse(RecoveryResponse):
+    username: str
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=200)
+    new_password: Password
+
+
+class ConfirmPasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=200)
+
+
+class ResetPasswordRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=100)
+    recovery_code: str = Field(min_length=20, max_length=128)
+    new_password: Password
+
+
+class SessionResponse(BaseModel):
+    id: UUID
+    created_at: datetime
+    expires_at: datetime
+    is_current: bool
+
+
+class RegistrationConfig(BaseModel):
+    enabled: bool

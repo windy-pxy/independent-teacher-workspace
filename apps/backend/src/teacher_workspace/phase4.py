@@ -11,7 +11,7 @@ from fastapi.responses import Response
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from teacher_workspace.auth import CsrfUserDep, UserDep
+from teacher_workspace.auth import AIUserDep, CsrfUserDep, UserDep
 from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.models import (
@@ -307,7 +307,7 @@ def detect_image(content: bytes) -> tuple[str, str] | None:
 )
 async def create_wrong_question_from_image(
     request: Request,
-    user: CsrfUserDep,
+    user: AIUserDep,
     session: SessionDep,
     settings: SettingsDep,
     student_subject_id: Annotated[uuid.UUID, Form()],
@@ -668,7 +668,7 @@ async def list_question_sets(
 )
 async def generate_question_set(
     payload: GenerateQuestionSetRequest,
-    user: CsrfUserDep,
+    user: AIUserDep,
     session: SessionDep,
     settings: SettingsDep,
 ) -> QuestionSetJobResponse:

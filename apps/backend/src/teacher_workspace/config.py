@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     login_max_failures: int = Field(default=5, ge=3, le=20)
     login_window_seconds: int = Field(default=900, ge=60, le=86400)
     login_lock_seconds: int = Field(default=900, ge=60, le=86400)
+    registration_enabled: bool = False
+    registration_limit_per_hour: int = Field(default=10, ge=1, le=1000)
+    auth_global_limit_per_minute: int = Field(default=120, ge=10, le=10000)
     storage_backend: Literal["local", "supabase"] = "local"
     local_storage_root: Path = Path("var/storage")
     supabase_url: str | None = None

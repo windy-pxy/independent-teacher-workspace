@@ -9,9 +9,22 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pwdlib import PasswordHash
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.concurrency import run_in_threadpool
 
+from teacher_workspace.account_schemas import (
+    ConfirmPasswordRequest,
+    PasswordChangeRequest,
+    RecoveryResponse,
+    RegisterRequest,
+    RegisterResponse,
+    RegistrationConfig,
+    ResetPasswordRequest,
+    SessionResponse,
+)
+from teacher_workspace.auth_limits import consume_auth_budget
 from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.login_throttle import LoginThrottle
@@ -122,6 +135,15 @@ async def login(
 ) -> LoginResponse:
     validate_origin(request, settings)
     username = payload.username.strip()
+    await consume_auth_budget(
+        session, "auth:global", limit=settings.auth_global_limit_per_minute, seconds=60
+    )
+    await consume_auth_budget(
+        session,
+        f"login:{username.casefold()}",
+        limit=settings.login_max_failures * 3,
+        seconds=settings.login_window_seconds,
+    )
     retry_after = await login_throttle.retry_after(username, settings.login_window_seconds)
     if retry_after:
         raise HTTPException(
@@ -130,10 +152,12 @@ async def login(
             headers={"Retry-After": str(retry_after)},
         )
     user = await session.scalar(
-        select(User).where(User.username == username, User.is_active.is_(True))
+        select(User).where(User.username == username, User.is_active.is_(True)).with_for_update()
     )
-    password_matches = password_hash.verify(
-        payload.password, user.password_hash if user is not None else dummy_password_hash
+    password_matches = await run_in_threadpool(
+        password_hash.verify,
+        payload.password,
+        user.password_hash if user is not None else dummy_password_hash,
     )
     if user is None or not password_matches:
         locked_for = await login_throttle.failure(
@@ -220,3 +244,241 @@ async def logout(
     await session.commit()
     response.delete_cookie(settings.session_cookie_name, path="/")
     response.delete_cookie(f"{settings.session_cookie_name}_csrf", path="/")
+
+
+@router.get("/registration", response_model=RegistrationConfig)
+async def registration_config(settings: SettingsDep) -> RegistrationConfig:
+    return RegistrationConfig(enabled=settings.registration_enabled)
+
+
+@router.post("/register", response_model=RegisterResponse, status_code=201)
+async def register(
+    payload: RegisterRequest,
+    request: Request,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> RegisterResponse:
+    validate_origin(request, settings)
+    if not settings.registration_enabled:
+        raise HTTPException(403, detail={"code": "REGISTRATION_CLOSED", "message": "暂未开放注册"})
+    await consume_auth_budget(
+        session, "register:global", limit=settings.registration_limit_per_hour, seconds=3600
+    )
+    # Do password work for both new and unavailable usernames to reduce timing leakage.
+    hashed = await run_in_threadpool(password_hash.hash, payload.password)
+    duplicate = await session.scalar(
+        select(User.id).where(func.lower(User.username) == payload.username)
+    )
+    if duplicate:
+        raise HTTPException(
+            409,
+            detail={
+                "code": "REGISTRATION_UNAVAILABLE",
+                "message": "无法使用该账户名注册，请更换后重试",
+            },
+        )
+    recovery_code = secrets.token_urlsafe(32)
+    user = User(
+        id=uuid.uuid4(),
+        username=payload.username,
+        password_hash=hashed,
+        recovery_code_hash=hash_token(recovery_code),
+        ai_access_enabled=False,
+    )
+    session.add(user)
+    try:
+        await session.flush()
+        session.add(
+            AuditLog(
+                actor_user_id=user.id,
+                action="USER_REGISTERED",
+                entity_type="User",
+                entity_id=str(user.id),
+                change_summary={},
+            )
+        )
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            409,
+            detail={
+                "code": "REGISTRATION_UNAVAILABLE",
+                "message": "无法使用该账户名注册，请更换后重试",
+            },
+        ) from None
+    return RegisterResponse(username=user.username, recovery_code=recovery_code)
+
+
+async def locked_user(session: AsyncSession, user_id: uuid.UUID) -> User:
+    user = await session.scalar(
+        select(User)
+        .where(User.id == user_id, User.is_active.is_(True))
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if user is None:
+        raise unauthorized()
+    return user
+
+
+async def check_current_password(session: AsyncSession, user: User, value: str) -> None:
+    await consume_auth_budget(session, f"password:{user.id}", limit=5, seconds=900)
+    await locked_user(session, user.id)
+    if not await run_in_threadpool(password_hash.verify, value, user.password_hash):
+        raise unauthorized("当前密码错误")
+
+
+async def revoke_sessions(session: AsyncSession, user_id: uuid.UUID) -> None:
+    await session.execute(
+        update(UserSession)
+        .where(UserSession.user_id == user_id, UserSession.revoked_at.is_(None))
+        .values(revoked_at=utc_now())
+    )
+
+
+@router.post("/password", status_code=204)
+async def change_password(
+    payload: PasswordChangeRequest, user: CsrfUserDep, session: SessionDep
+) -> None:
+    await check_current_password(session, user, payload.current_password)
+    if payload.new_password.isspace():
+        raise HTTPException(
+            422, detail={"code": "PASSWORD_INVALID", "message": "密码不能全部为空格"}
+        )
+    user.password_hash = await run_in_threadpool(password_hash.hash, payload.new_password)
+    await revoke_sessions(session, user.id)
+    session.add(
+        AuditLog(
+            actor_user_id=user.id,
+            action="PASSWORD_CHANGED",
+            entity_type="User",
+            entity_id=str(user.id),
+            change_summary={},
+        )
+    )
+    await session.commit()
+
+
+@router.post("/recovery-code", response_model=RecoveryResponse)
+async def rotate_recovery_code(
+    payload: ConfirmPasswordRequest, user: CsrfUserDep, session: SessionDep
+) -> RecoveryResponse:
+    await check_current_password(session, user, payload.current_password)
+    code = secrets.token_urlsafe(32)
+    user.recovery_code_hash = hash_token(code)
+    session.add(
+        AuditLog(
+            actor_user_id=user.id,
+            action="RECOVERY_CODE_ROTATED",
+            entity_type="User",
+            entity_id=str(user.id),
+            change_summary={},
+        )
+    )
+    await session.commit()
+    return RecoveryResponse(recovery_code=code)
+
+
+@router.post("/reset-password", status_code=204)
+async def reset_password(
+    payload: ResetPasswordRequest, request: Request, session: SessionDep, settings: SettingsDep
+) -> None:
+    validate_origin(request, settings)
+    await consume_auth_budget(
+        session, "auth:global", limit=settings.auth_global_limit_per_minute, seconds=60
+    )
+    await consume_auth_budget(
+        session, f"recovery:{payload.username.strip().casefold()}", limit=5, seconds=900
+    )
+    user = await session.scalar(
+        select(User)
+        .where(User.username == payload.username.strip(), User.is_active.is_(True))
+        .with_for_update()
+    )
+    expected = user.recovery_code_hash if user and user.recovery_code_hash else "0" * 64
+    matches = secrets.compare_digest(hash_token(payload.recovery_code.strip()), expected)
+    if not user or not matches:
+        raise HTTPException(
+            400, detail={"code": "RECOVERY_INVALID", "message": "账户名或恢复码无效"}
+        )
+    if payload.new_password.isspace():
+        raise HTTPException(
+            422, detail={"code": "PASSWORD_INVALID", "message": "密码不能全部为空格"}
+        )
+    user.password_hash = await run_in_threadpool(password_hash.hash, payload.new_password)
+    user.recovery_code_hash = None
+    await revoke_sessions(session, user.id)
+    session.add(
+        AuditLog(
+            actor_user_id=user.id,
+            action="PASSWORD_RECOVERED",
+            entity_type="User",
+            entity_id=str(user.id),
+            change_summary={},
+        )
+    )
+    await session.commit()
+
+
+@router.get("/sessions", response_model=list[SessionResponse])
+async def list_sessions(context: AuthContextDep, session: SessionDep) -> list[SessionResponse]:
+    rows = await session.scalars(
+        select(UserSession)
+        .where(
+            UserSession.user_id == context.user.id,
+            UserSession.revoked_at.is_(None),
+            UserSession.expires_at > utc_now(),
+        )
+        .order_by(UserSession.created_at.desc())
+        .limit(100)
+    )
+    return [
+        SessionResponse(
+            id=row.id,
+            created_at=row.created_at,
+            expires_at=row.expires_at,
+            is_current=row.id == context.user_session.id,
+        )
+        for row in rows
+    ]
+
+
+@router.post("/sessions/revoke-others", status_code=204)
+async def revoke_other_sessions(
+    context: AuthContextDep, _: CsrfUserDep, session: SessionDep
+) -> None:
+    await session.execute(
+        update(UserSession)
+        .where(
+            UserSession.user_id == context.user.id,
+            UserSession.id != context.user_session.id,
+            UserSession.revoked_at.is_(None),
+        )
+        .values(revoked_at=utc_now())
+    )
+    session.add(
+        AuditLog(
+            actor_user_id=context.user.id,
+            action="OTHER_SESSIONS_REVOKED",
+            entity_type="User",
+            entity_id=str(context.user.id),
+            change_summary={},
+        )
+    )
+    await session.commit()
+
+
+async def require_ai_access(user: CsrfUserDep) -> User:
+    if not user.ai_access_enabled:
+        raise HTTPException(
+            403,
+            detail={
+                "code": "AI_ACCESS_DISABLED",
+                "message": "此账户的 AI 生成权限尚未开通，可先使用学生、课程与手工记录功能",
+            },
+        )
+    return user
+
+
+AIUserDep = Annotated[User, Depends(require_ai_access)]

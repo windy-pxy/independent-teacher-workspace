@@ -18,7 +18,6 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
-    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -108,23 +107,25 @@ class QuestionSetVersionSource(StrEnum):
 
 class User(Base):
     __tablename__ = "users"
-    __table_args__ = (
-        Index(
-            "uq_users_single_active",
-            "is_active",
-            unique=True,
-            postgresql_where=text("is_active = true"),
-        ),
-    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     username: Mapped[str] = mapped_column(String(100), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    recovery_code_hash: Mapped[str | None] = mapped_column(String(64))
+    ai_access_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default="false")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
+
+
+class AuthRateLimit(Base):
+    __tablename__ = "auth_rate_limits"
+
+    key_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    window_start: Mapped[int] = mapped_column(BigInteger)
+    attempts: Mapped[int] = mapped_column(Integer)
 
 
 class UserSession(Base):
