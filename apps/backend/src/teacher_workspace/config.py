@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     login_window_seconds: int = Field(default=900, ge=60, le=86400)
     login_lock_seconds: int = Field(default=900, ge=60, le=86400)
     registration_enabled: bool = False
+    registration_invite_required: bool = False
     registration_limit_per_hour: int = Field(default=10, ge=1, le=1000)
     auth_global_limit_per_minute: int = Field(default=120, ge=10, le=10000)
     account_deletion_grace_days: int = Field(default=7, ge=1, le=30)
@@ -52,6 +53,7 @@ class Settings(BaseSettings):
     supabase_service_role_key: str | None = None
     supabase_storage_bucket: str = "teacher-workspace"
     max_upload_bytes: int = 20 * 1024 * 1024
+    user_upload_quota_bytes: int = Field(default=512 * 1024 * 1024, ge=1)
     allowed_upload_mime_types: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: [
             "application/pdf",
@@ -106,6 +108,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_security(self) -> "Settings":
+        if self.user_upload_quota_bytes < self.max_upload_bytes:
+            raise ValueError("USER_UPLOAD_QUOTA_BYTES must be at least MAX_UPLOAD_BYTES")
         if self.app_env != "production":
             return self
         placeholder_secrets = {
@@ -161,6 +165,8 @@ class Settings(BaseSettings):
             raise ValueError(
                 "Public registration requires a real SUPPORT_CONTACT for privacy requests"
             )
+        if self.registration_enabled and not self.registration_invite_required:
+            raise ValueError("Production registration must require an invitation code")
         return self
 
 

@@ -3726,6 +3726,19 @@
       },
       "RegisterRequest": {
         "properties": {
+          "invite_code": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invite Code"
+          },
           "password": {
             "maxLength": 200,
             "minLength": 12,
@@ -3786,6 +3799,11 @@
         "properties": {
           "enabled": {
             "title": "Enabled",
+            "type": "boolean"
+          },
+          "invite_required": {
+            "default": false,
+            "title": "Invite Required",
             "type": "boolean"
           },
           "privacy_notice_version": {
@@ -3947,6 +3965,29 @@
           "is_current"
         ],
         "title": "SessionResponse",
+        "type": "object"
+      },
+      "StorageUsageResponse": {
+        "properties": {
+          "quota_bytes": {
+            "title": "Quota Bytes",
+            "type": "integer"
+          },
+          "remaining_bytes": {
+            "title": "Remaining Bytes",
+            "type": "integer"
+          },
+          "used_bytes": {
+            "title": "Used Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "used_bytes",
+          "quota_bytes",
+          "remaining_bytes"
+        ],
+        "title": "StorageUsageResponse",
         "type": "object"
       },
       "StudentBillingSummary": {
@@ -5613,6 +5654,27 @@
           }
         },
         "summary": "Revoke Other Sessions",
+        "tags": [
+          "authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/storage-usage": {
+      "get": {
+        "operationId": "storage_usage_api_v1_auth_storage_usage_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageUsageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Storage Usage",
         "tags": [
           "authentication"
         ]

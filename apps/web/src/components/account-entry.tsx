@@ -9,6 +9,7 @@ import { broadcastAuthChanged, clearTabUserId } from "@/lib/account-context";
 export function AccountEntry({ mode }: { mode: "register" | "recover" }) {
   const [enabled, setEnabled] = useState<boolean>();
   const [privacyVersion, setPrivacyVersion] = useState("2026-09-11");
+  const [inviteRequired, setInviteRequired] = useState(false);
   const [supportContact, setSupportContact] = useState<string>();
   const [error, setError] = useState<unknown>();
   const [busy, setBusy] = useState(false);
@@ -17,8 +18,8 @@ export function AccountEntry({ mode }: { mode: "register" | "recover" }) {
   const [saved, setSaved] = useState(false);
   const [done, setDone] = useState(false);
   useEffect(() => {
-    if (mode === "register") api<{ enabled: boolean; privacy_notice_version: string; support_contact?: string }>("/auth/registration")
-      .then(value => { setEnabled(value.enabled); setPrivacyVersion(value.privacy_notice_version); setSupportContact(value.support_contact); }).catch(setError);
+    if (mode === "register") api<{ enabled: boolean; invite_required: boolean; privacy_notice_version: string; support_contact?: string }>("/auth/registration")
+      .then(value => { setEnabled(value.enabled); setInviteRequired(value.invite_required); setPrivacyVersion(value.privacy_notice_version); setSupportContact(value.support_contact); }).catch(setError);
   }, [mode]);
   useEffect(() => {
     if (!code || saved) return;
@@ -44,6 +45,7 @@ export function AccountEntry({ mode }: { mode: "register" | "recover" }) {
             password_confirmation: password,
             privacy_notice_accepted: values.get("privacy_notice_accepted") === "on",
             privacy_notice_version: privacyVersion,
+            invite_code: inviteRequired ? String(values.get("invite_code") ?? "").trim() : undefined,
           }),
         });
         setRegisteredName(username);
@@ -77,6 +79,7 @@ export function AccountEntry({ mode }: { mode: "register" | "recover" }) {
         : mode === "register" && enabled !== true ? <p className="my-6" role="status">{enabled === false ? "当前暂未开放注册，请稍后再来。" : "正在确认注册是否开放…"}</p>
         : <form className="mt-6 grid gap-4" onSubmit={submit}>
           <label><span className="label">账户名</span><input className="field" name="username" autoComplete="username" required maxLength={mode === "register" ? 40 : 100} pattern={mode === "register" ? "[a-z][a-z0-9_\\-]{2,39}" : undefined} />{mode === "register" ? <span className="text-xs">3–40 位，以小写字母开头，可含数字、下划线和短横线。</span> : null}</label>
+          {mode === "register" && inviteRequired ? <label><span className="label">邀请码</span><input className="field" name="invite_code" autoComplete="off" required minLength={20} maxLength={200} /><span className="text-xs">请输入邀请人单独发给你的邀请码。</span></label> : null}
           {mode === "recover" ? <label><span className="label">恢复码</span><input className="field" name="recovery_code" autoComplete="off" required minLength={20} maxLength={128} /></label> : null}
           <label><span className="label">{mode === "recover" ? "新密码" : "密码"}（12–200 个字符）</span><input className="field" name="password" type="password" autoComplete="new-password" required minLength={12} maxLength={200} /></label>
           <label><span className="label">再次输入密码</span><input className="field" name="confirmation" type="password" autoComplete="new-password" required minLength={12} maxLength={200} /></label>

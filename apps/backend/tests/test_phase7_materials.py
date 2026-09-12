@@ -151,6 +151,20 @@ async def test_material_upload_selection_generation_and_archive(
     assert material["chunk_count"] == 1
     assert material["extracted_chars"] > 0
 
+    usage = await client.get("/api/v1/auth/storage-usage")
+    assert usage.status_code == 200
+    assert usage.json()["used_bytes"] == len("整式加减先合并同类项。".encode())
+
+    settings.user_upload_quota_bytes = usage.json()["used_bytes"]
+    full = await client.post(
+        "/api/v1/materials",
+        data={"student_subject_id": link_id, "purpose": "TEACHING_MATERIAL"},
+        files={"file": ("另一份.txt", "不同的虚构内容".encode(), "text/plain")},
+        headers=headers,
+    )
+    assert full.status_code == 413
+    assert full.json()["code"] == "USER_STORAGE_QUOTA_REACHED"
+
     duplicate = await client.post(
         "/api/v1/materials",
         data={"student_subject_id": link_id, "purpose": "TEACHING_MATERIAL"},

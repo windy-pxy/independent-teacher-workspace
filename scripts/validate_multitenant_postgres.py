@@ -76,6 +76,7 @@ def browser_check(env: dict[str, str]) -> None:
     env.update(
         {
             "REGISTRATION_ENABLED": "true",
+            "REGISTRATION_INVITE_REQUIRED": "true",
             "TRUSTED_ORIGINS": "http://127.0.0.1:3102",
             "TRUSTED_HOSTS": "127.0.0.1,localhost",
             "API_INTERNAL_URL": "http://127.0.0.1:8102",
@@ -85,6 +86,30 @@ def browser_check(env: dict[str, str]) -> None:
             "APP_ENV": "test",
         }
     )
+    python = (
+        ROOT / "apps/backend/.venv/Scripts/python.exe"
+        if os.name == "nt"
+        else ROOT / "apps/backend/.venv/bin/python"
+    )
+    for suffix in ("A", "B"):
+        output = subprocess.check_output(
+            [
+                str(python),
+                "-m",
+                "teacher_workspace.manage_users",
+                "invite-create",
+                "--label",
+                f"虚构浏览器验收-{suffix}",
+                "--uses",
+                "1",
+                "--days",
+                "1",
+            ],
+            cwd=ROOT,
+            env=env,
+            text=True,
+        )
+        env[f"VALIDATION_INVITE_{suffix}"] = output.strip().splitlines()[-1]
     processes, handles = start_services(env)
     try:
         subprocess.run(
@@ -148,6 +173,7 @@ def main() -> None:
         url = f"postgresql+asyncpg://postgres:{env['POSTGRES_PASSWORD']}@127.0.0.1:{port}/teacher_multitenant_test"
         env["DATABASE_URL"] = url
         env["MULTITENANT_TEST_DATABASE_URL"] = url
+        env["STORAGE_QUOTA_TEST_DATABASE_URL"] = url
         uv = ["uv", "run", "--project", "apps/backend", "--no-sync"]
         migration = uv + ["alembic", "-c", "apps/backend/alembic.ini"]
         for operation in (["upgrade", "head"], ["downgrade", "-1"], ["upgrade", "head"], ["check"]):
@@ -156,6 +182,31 @@ def main() -> None:
             uv + ["pytest", "apps/backend/tests/test_multi_tenant_isolation.py", "-q"],
             cwd=ROOT,
             env=env,
+            check=True,
+        )
+        subprocess.run(
+            uv + ["pytest", "apps/backend/tests/test_storage_quota.py", "-q"],
+            cwd=ROOT,
+            env=env,
+            check=True,
+        )
+        subprocess.run(
+            ["docker", "exec", name, "createdb", "-U", "postgres", "teacher_accounts_test"],
+            check=True,
+        )
+        account_env = env.copy()
+        account_env["DATABASE_URL"] = url.rsplit("/", 1)[0] + "/teacher_accounts_test"
+        account_env["ACCOUNT_TEST_DATABASE_URL"] = account_env["DATABASE_URL"]
+        subprocess.run(migration + ["upgrade", "head"], cwd=ROOT, env=account_env, check=True)
+        subprocess.run(
+            uv
+            + [
+                "pytest",
+                "apps/backend/tests/test_accounts.py::test_invitation_is_required_limited_and_never_stored_in_plaintext",
+                "-q",
+            ],
+            cwd=ROOT,
+            env=account_env,
             check=True,
         )
         if "--browser" in sys.argv:

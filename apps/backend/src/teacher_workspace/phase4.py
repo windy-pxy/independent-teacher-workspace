@@ -65,6 +65,7 @@ from teacher_workspace.prompts import (
 )
 from teacher_workspace.providers.ai import configured_ai_model, configured_vision_model
 from teacher_workspace.providers.storage import create_storage_provider
+from teacher_workspace.storage_quota import ensure_upload_capacity
 
 router = APIRouter(prefix="/api/v1", tags=["wrong-questions", "practice"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
@@ -324,6 +325,7 @@ async def create_wrong_question_from_image(
     detected = detect_image(content)
     if detected is None or image.content_type != detected[0]:
         raise api_error(422, "INVALID_FILE_CONTENT", "图片类型、MIME 或文件内容不一致")
+    await ensure_upload_capacity(session, user.id, len(content), settings)
     await reserve_ai_usage(user, session)
     object_key = f"wrong-questions/{user.id}/{uuid.uuid4()}{detected[1]}"
     storage = create_storage_provider(settings)

@@ -36,6 +36,7 @@ from teacher_workspace.phase7_service import (
     extract_sections,
 )
 from teacher_workspace.providers.storage import create_storage_provider
+from teacher_workspace.storage_quota import ensure_upload_capacity
 
 router = APIRouter(prefix="/api/v1", tags=["materials"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
@@ -178,6 +179,7 @@ async def upload_material(
     )
     if duplicate is not None:
         raise api_error(409, "DUPLICATE_MATERIAL", "该学生学科已存在相同资料")
+    await ensure_upload_capacity(session, user.id, len(content), settings)
     object_key = f"materials/{user.id}/{uuid.uuid4()}{extension}"
     storage = create_storage_provider(settings)
     await storage.save(object_key, content)

@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from zipfile import ZipFile
 
@@ -17,7 +18,14 @@ from teacher_workspace.auth_limits import consume_auth_budget
 from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.main import app
-from teacher_workspace.models import AIJob, AIJobStatus, AuditLog, Base, User
+from teacher_workspace.models import (
+    AIJob,
+    AIJobStatus,
+    AuditLog,
+    Base,
+    RegistrationInvite,
+    User,
+)
 
 ORIGIN = {"Origin": "http://test"}
 PASSWORD = "fictional-strong-password"
@@ -122,6 +130,7 @@ async def test_registration_hashes_secrets_and_preserves_independent_users(accou
     settings.registration_enabled = False
     assert (await client.get("/api/v1/auth/registration")).json() == {
         "enabled": False,
+        "invite_required": False,
         "privacy_notice_version": "2026-09-11",
         "support_contact": None,
     }
@@ -136,6 +145,64 @@ async def test_registration_hashes_secrets_and_preserves_independent_users(accou
         },
     )
     assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_invitation_is_required_limited_and_never_stored_in_plaintext(accounts):
+    client, factory, settings = accounts
+    settings.registration_invite_required = True
+    missing = await client.post(
+        "/api/v1/auth/register",
+        headers=ORIGIN,
+        json={
+            "username": "fictional-invited",
+            "password": PASSWORD,
+            "password_confirmation": PASSWORD,
+            **PRIVACY,
+        },
+    )
+    assert missing.status_code == 422
+    assert missing.json()["code"] == "INVITATION_INVALID"
+
+    invite_code = "fictional-one-time-invite-code-123456"
+    async with factory() as session, session.begin():
+        session.add(
+            RegistrationInvite(
+                code_hash=hash_token(invite_code),
+                label="虚构首批试用",
+                max_uses=1,
+                expires_at=datetime.now(UTC) + timedelta(days=1),
+            )
+        )
+    accepted = await client.post(
+        "/api/v1/auth/register",
+        headers=ORIGIN,
+        json={
+            "username": "fictional-invited",
+            "password": PASSWORD,
+            "password_confirmation": PASSWORD,
+            "invite_code": invite_code,
+            **PRIVACY,
+        },
+    )
+    assert accepted.status_code == 201, accepted.text
+    reused = await client.post(
+        "/api/v1/auth/register",
+        headers=ORIGIN,
+        json={
+            "username": "fictional-invited-two",
+            "password": PASSWORD,
+            "password_confirmation": PASSWORD,
+            "invite_code": invite_code,
+            **PRIVACY,
+        },
+    )
+    assert reused.status_code == 422
+    async with factory() as session:
+        invite = await session.scalar(select(RegistrationInvite))
+        assert invite is not None and invite.uses_count == 1
+        assert invite.code_hash == hash_token(invite_code)
+        assert invite_code not in str(invite.__dict__)
 
 
 @pytest.mark.asyncio

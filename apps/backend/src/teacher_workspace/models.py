@@ -105,6 +105,26 @@ class QuestionSetVersionSource(StrEnum):
     MANUAL_EDIT = "MANUAL_EDIT"
 
 
+class RegistrationInvite(Base):
+    __tablename__ = "registration_invites"
+    __table_args__ = (
+        CheckConstraint("max_uses > 0", name="ck_registration_invites_max_uses_positive"),
+        CheckConstraint(
+            "uses_count >= 0 AND uses_count <= max_uses",
+            name="ck_registration_invites_uses_valid",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    code_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    label: Mapped[str] = mapped_column(String(100))
+    max_uses: Mapped[int] = mapped_column(Integer)
+    uses_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (
@@ -118,6 +138,9 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(100), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     recovery_code_hash: Mapped[str | None] = mapped_column(String(64))
+    registration_invite_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("registration_invites.id", ondelete="SET NULL"), index=True
+    )
     privacy_notice_version: Mapped[str | None] = mapped_column(String(20))
     privacy_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -276,6 +276,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/storage-usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Storage Usage */
+        get: operations["storage_usage_api_v1_auth_storage_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/billing/export.csv": {
         parameters: {
             query?: never;
@@ -2928,6 +2945,8 @@ export interface components {
         };
         /** RegisterRequest */
         RegisterRequest: {
+            /** Invite Code */
+            invite_code?: string | null;
             /** Password */
             password: string;
             /** Password Confirmation */
@@ -2956,6 +2975,11 @@ export interface components {
         RegistrationConfig: {
             /** Enabled */
             enabled: boolean;
+            /**
+             * Invite Required
+             * @default false
+             */
+            invite_required: boolean;
             /**
              * Privacy Notice Version
              * @default 2026-09-11
@@ -3019,6 +3043,15 @@ export interface components {
             id: string;
             /** Is Current */
             is_current: boolean;
+        };
+        /** StorageUsageResponse */
+        StorageUsageResponse: {
+            /** Quota Bytes */
+            quota_bytes: number;
+            /** Remaining Bytes */
+            remaining_bytes: number;
+            /** Used Bytes */
+            used_bytes: number;
         };
         /** StudentBillingSummary */
         StudentBillingSummary: {
@@ -3818,6 +3851,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    storage_usage_api_v1_auth_storage_usage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageUsageResponse"];
+                };
             };
         };
     };

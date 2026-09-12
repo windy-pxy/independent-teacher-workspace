@@ -9,10 +9,11 @@ const validationDir = path.resolve("var/validation");
 const stateA = path.join(validationDir, "m3-owner-a-state.json");
 const stateB = path.join(validationDir, "m3-owner-b-state.json");
 
-async function register(page, username) {
+async function register(page, username, invite) {
   await page.goto(base + "/register");
   await expect(page.getByRole("button", { name: "注册教师账户" })).toBeVisible();
   await page.getByLabel(/账户名/).fill(username);
+  await page.getByLabel("邀请码").fill(invite);
   await page.getByLabel(/^密码/).fill(password);
   await page.getByLabel("再次输入密码").fill(password);
   await page.getByRole("checkbox", { name: /隐私说明/ }).check();
@@ -42,7 +43,7 @@ async function setup(browser, errors) {
   const pageB = await contextB.newPage();
   pageA.on("pageerror", error => errors.push(`A: ${error.message}`));
   pageB.on("pageerror", error => errors.push(`B: ${error.message}`));
-  await register(pageA, "fictional-browser-owner-a");
+  await register(pageA, "fictional-browser-owner-a", process.env.VALIDATION_INVITE_A);
   await login(pageA, "fictional-browser-owner-a");
   await openStudents(pageA);
   await expect(pageA.getByText("暂无学生", { exact: true })).toBeVisible();
@@ -50,7 +51,7 @@ async function setup(browser, errors) {
   await pageA.getByRole("button", { name: "创建学生" }).click();
   await expect(pageA.getByRole("heading", { name: "A浏览器专属虚构学生" })).toBeVisible();
 
-  await register(pageB, "fictional-browser-owner-b");
+  await register(pageB, "fictional-browser-owner-b", process.env.VALIDATION_INVITE_B);
   await login(pageB, "fictional-browser-owner-b");
   await openStudents(pageB);
   await expect(pageB.getByText("暂无学生", { exact: true })).toBeVisible();

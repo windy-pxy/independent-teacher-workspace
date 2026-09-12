@@ -2,14 +2,93 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from datetime import UTC, datetime
+import hashlib
+import secrets
+import uuid
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select, update
 
 from teacher_workspace.account_deletion import purge_due_accounts
 from teacher_workspace.config import get_settings
 from teacher_workspace.db import dispose_engine, get_session_factory
-from teacher_workspace.models import AIJob, AIJobStatus, AuditLog, User, UserSession
+from teacher_workspace.models import (
+    AIJob,
+    AIJobStatus,
+    AuditLog,
+    RegistrationInvite,
+    User,
+    UserSession,
+)
+
+
+def hash_invite(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+async def create_invite(label: str, max_uses: int, days: int) -> None:
+    if max_uses < 1 or max_uses > 100 or days < 1 or days > 90:
+        raise SystemExit("邀请码使用次数须为 1–100，有效期须为 1–90 天")
+    code = secrets.token_urlsafe(32)
+    invite = RegistrationInvite(
+        code_hash=hash_invite(code),
+        label=label,
+        max_uses=max_uses,
+        expires_at=datetime.now(UTC) + timedelta(days=days),
+    )
+    factory = get_session_factory()
+    async with factory() as session, session.begin():
+        session.add(invite)
+        await session.flush()
+        session.add(
+            AuditLog(
+                actor_user_id=None,
+                action="REGISTRATION_INVITE_CREATED",
+                entity_type="RegistrationInvite",
+                entity_id=str(invite.id),
+                change_summary={"label": label, "max_uses": max_uses, "days": days},
+            )
+        )
+    print("邀请码只显示这一次，请通过可信渠道交给受邀教师：")
+    print(code)
+
+
+async def list_invites() -> None:
+    factory = get_session_factory()
+    async with factory() as session:
+        invites = list(
+            await session.scalars(
+                select(RegistrationInvite).order_by(RegistrationInvite.created_at.desc())
+            )
+        )
+    if not invites:
+        print("当前没有邀请码")
+        return
+    for item in invites:
+        state = "已撤销" if item.revoked_at else "有效/待核对到期时间"
+        print(
+            f"{item.id} | {item.label} | {item.uses_count}/{item.max_uses} | "
+            f"到期 {item.expires_at.isoformat()} | {state}"
+        )
+
+
+async def revoke_invite(invite_id: uuid.UUID) -> None:
+    factory = get_session_factory()
+    async with factory() as session, session.begin():
+        invite = await session.get(RegistrationInvite, invite_id, with_for_update=True)
+        if invite is None:
+            raise SystemExit("邀请码记录不存在")
+        invite.revoked_at = datetime.now(UTC)
+        session.add(
+            AuditLog(
+                actor_user_id=None,
+                action="REGISTRATION_INVITE_REVOKED",
+                entity_type="RegistrationInvite",
+                entity_id=str(invite.id),
+                change_summary={"label": invite.label},
+            )
+        )
+    print(f"已撤销邀请码：{invite_id}")
 
 
 async def set_ai_quota(username: str, limit: int) -> None:
@@ -82,7 +161,7 @@ async def set_active(username: str, active: bool) -> None:
     print(f"已{'启用' if active else '停用'}教师账户：{username}")
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="在服务器终端安全管理教师账户")
     subcommands = parser.add_subparsers(dest="command", required=True)
     quota = subcommands.add_parser("ai", help="设置月度 AI 生成次数；0 表示关闭")
@@ -94,21 +173,44 @@ def main() -> None:
         action.add_argument("--confirm", required=True, help="再次输入完全相同的账户名")
     purge = subcommands.add_parser("purge-due", help="永久清除已过撤销期的账户")
     purge.add_argument("--confirm", required=True, help="必须输入 PURGE-DUE")
-    args = parser.parse_args()
+    invite_create = subcommands.add_parser("invite-create", help="创建限次、限时邀请码")
+    invite_create.add_argument("--label", required=True)
+    invite_create.add_argument("--uses", type=int, default=1)
+    invite_create.add_argument("--days", type=int, default=7)
+    subcommands.add_parser("invite-list", help="列出邀请码元数据，不显示邀请码原文")
+    invite_revoke = subcommands.add_parser("invite-revoke", help="撤销邀请码")
+    invite_revoke.add_argument("invite_id", type=uuid.UUID)
+    invite_revoke.add_argument("--confirm", required=True)
+    return parser
+
+
+async def execute(args: argparse.Namespace) -> None:
     try:
         if args.command == "ai":
-            asyncio.run(set_ai_quota(args.username, args.limit))
+            await set_ai_quota(args.username, args.limit)
         elif args.command in {"activate", "deactivate"}:
             if args.confirm != args.username:
                 raise SystemExit("确认账户名不一致，操作已取消")
-            asyncio.run(set_active(args.username, args.command == "activate"))
-        else:
+            await set_active(args.username, args.command == "activate")
+        elif args.command == "purge-due":
             if args.confirm != "PURGE-DUE":
                 raise SystemExit("确认文本不一致，操作已取消")
-            count = asyncio.run(purge_due_accounts(get_session_factory(), get_settings()))
+            count = await purge_due_accounts(get_session_factory(), get_settings())
             print(f"已永久清除 {count} 个到期账户")
+        elif args.command == "invite-create":
+            await create_invite(args.label, args.uses, args.days)
+        elif args.command == "invite-list":
+            await list_invites()
+        else:
+            if args.confirm != str(args.invite_id):
+                raise SystemExit("确认邀请码 ID 不一致，操作已取消")
+            await revoke_invite(args.invite_id)
     finally:
-        asyncio.run(dispose_engine())
+        await dispose_engine()
+
+
+def main() -> None:
+    asyncio.run(execute(build_parser().parse_args()))
 
 
 if __name__ == "__main__":

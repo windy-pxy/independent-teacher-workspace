@@ -29,13 +29,23 @@ from teacher_workspace.account_schemas import (
     RegistrationConfig,
     ResetPasswordRequest,
     SessionResponse,
+    StorageUsageResponse,
 )
 from teacher_workspace.auth_limits import consume_auth_budget
 from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.login_throttle import LoginThrottle
-from teacher_workspace.models import AIJob, AIJobStatus, AIUsageMonth, AuditLog, User, UserSession
+from teacher_workspace.models import (
+    AIJob,
+    AIJobStatus,
+    AIUsageMonth,
+    AuditLog,
+    RegistrationInvite,
+    User,
+    UserSession,
+)
 from teacher_workspace.phase1_schemas import AuthUser, LoginRequest, LoginResponse
+from teacher_workspace.storage_quota import upload_usage_bytes
 
 router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
 password_hash = PasswordHash.recommended()
@@ -275,6 +285,7 @@ async def logout(
 async def registration_config(settings: SettingsDep) -> RegistrationConfig:
     return RegistrationConfig(
         enabled=settings.registration_enabled,
+        invite_required=settings.registration_invite_required,
         support_contact=settings.support_contact,
     )
 
@@ -292,6 +303,27 @@ async def register(
     await consume_auth_budget(
         session, "register:global", limit=settings.registration_limit_per_hour, seconds=3600
     )
+    invite: RegistrationInvite | None = None
+    if settings.registration_invite_required:
+        invite_hash = hash_token(payload.invite_code or "")
+        invite = await session.scalar(
+            select(RegistrationInvite)
+            .where(
+                RegistrationInvite.code_hash == invite_hash,
+                RegistrationInvite.revoked_at.is_(None),
+                RegistrationInvite.expires_at > utc_now(),
+                RegistrationInvite.uses_count < RegistrationInvite.max_uses,
+            )
+            .with_for_update()
+        )
+        if invite is None:
+            raise HTTPException(
+                422,
+                detail={
+                    "code": "INVITATION_INVALID",
+                    "message": "邀请码无效、已过期或已用完，请向邀请人确认",
+                },
+            )
     # Do password work for both new and unavailable usernames to reduce timing leakage.
     hashed = await run_in_threadpool(password_hash.hash, payload.password)
     duplicate = await session.scalar(
@@ -311,6 +343,7 @@ async def register(
         username=payload.username,
         password_hash=hashed,
         recovery_code_hash=hash_token(recovery_code),
+        registration_invite_id=invite.id if invite else None,
         ai_access_enabled=False,
         ai_monthly_job_limit=0,
         privacy_notice_version=payload.privacy_notice_version,
@@ -318,6 +351,8 @@ async def register(
     )
     session.add(user)
     try:
+        if invite is not None:
+            invite.uses_count += 1
         await session.flush()
         session.add(
             AuditLog(
@@ -339,6 +374,18 @@ async def register(
             },
         ) from None
     return RegisterResponse(username=user.username, recovery_code=recovery_code)
+
+
+@router.get("/storage-usage", response_model=StorageUsageResponse)
+async def storage_usage(
+    user: UserDep, session: SessionDep, settings: SettingsDep
+) -> StorageUsageResponse:
+    used = await upload_usage_bytes(session, user.id)
+    return StorageUsageResponse(
+        used_bytes=used,
+        quota_bytes=settings.user_upload_quota_bytes,
+        remaining_bytes=max(settings.user_upload_quota_bytes - used, 0),
+    )
 
 
 async def locked_user(session: AsyncSession, user_id: uuid.UUID) -> User:

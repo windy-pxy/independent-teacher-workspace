@@ -34,6 +34,7 @@
     "backup:drill": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.backup_restore drill",
     "backup:restore": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.backup_restore restore",
     "production:check": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.production_check",
+    "production:verify-public": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.public_deployment_check",
     "security:static": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.security_check",
     "security:dependencies": "pnpm audit --audit-level high && cross-env PYTHONUTF8=1 uv run --project apps/backend --no-sync pip-audit",
     "performance:smoke": "cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync python -m teacher_workspace.performance_smoke",

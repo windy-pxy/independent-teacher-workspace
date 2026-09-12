@@ -10,11 +10,17 @@ import { broadcastAuthChanged, clearTabUserId } from "@/lib/account-context";
 import type { AuthUser } from "@/lib/types";
 
 type Session = { id: string; created_at: string; expires_at: string; is_current: boolean };
+type StorageUsage = { used_bytes: number; quota_bytes: number; remaining_bytes: number };
+
+function formatBytes(value: number) {
+  return new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 1 }).format(value / 1024 / 1024);
+}
 
 export default function AccountPage() {
   const client = useQueryClient();
   const account = useQuery({ queryKey: ["auth", "me"], queryFn: () => api<AuthUser>("/auth/me") });
   const sessions = useQuery({ queryKey: ["account-sessions"], queryFn: () => api<Session[]>("/auth/sessions") });
+  const storage = useQuery({ queryKey: ["storage-usage"], queryFn: () => api<StorageUsage>("/auth/storage-usage") });
   const [error, setError] = useState<unknown>();
   const [message, setMessage] = useState("");
   const [code, setCode] = useState("");
@@ -121,6 +127,7 @@ export default function AccountPage() {
       </section>
       <section className="card lg:col-span-2"><h2 className="text-xl font-semibold">数据与隐私</h2>
         <p className="my-3 text-sm leading-7">下载当前账户的结构化记录、上传附件和已生成文档。压缩包可能包含学生隐私，请只保存在你控制的加密设备中。</p>
+        {storage.data ? <p className="mb-3 text-sm">上传空间已使用 <strong>{formatBytes(storage.data.used_bytes)} MB</strong> / {formatBytes(storage.data.quota_bytes)} MB，剩余 {formatBytes(storage.data.remaining_bytes)} MB。归档资料仍占用空间。</p> : null}
         <div className="flex flex-wrap gap-3"><button className="button-primary" type="button" disabled={busy} onClick={exportData}>导出我的全部资料</button><Link className="button-secondary" href="/privacy" target="_blank">查看隐私说明</Link></div>
       </section>
       <section className="card border border-red-200 lg:col-span-2">

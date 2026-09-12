@@ -31,6 +31,9 @@ def main() -> None:
                 "storage_backend": settings.storage_backend,
                 "ai_provider": settings.ai_provider,
                 "vision_ai_provider": settings.vision_ai_provider,
+                "registration_enabled": settings.registration_enabled,
+                "registration_invite_required": settings.registration_invite_required,
+                "user_upload_quota_bytes": settings.user_upload_quota_bytes,
             },
             ensure_ascii=False,
         )

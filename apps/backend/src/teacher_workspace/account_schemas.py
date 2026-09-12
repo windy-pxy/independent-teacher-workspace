@@ -14,6 +14,7 @@ class RegisterRequest(BaseModel):
     password_confirmation: Password
     privacy_notice_accepted: Literal[True]
     privacy_notice_version: Literal["2026-09-11"]
+    invite_code: str | None = Field(default=None, min_length=20, max_length=200)
 
     @model_validator(mode="after")
     def matching_passwords(self) -> "RegisterRequest":
@@ -64,5 +65,12 @@ class SessionResponse(BaseModel):
 
 class RegistrationConfig(BaseModel):
     enabled: bool
+    invite_required: bool = False
     privacy_notice_version: str = CURRENT_PRIVACY_NOTICE_VERSION
     support_contact: str | None = None
+
+
+class StorageUsageResponse(BaseModel):
+    used_bytes: int
+    quota_bytes: int
+    remaining_bytes: int

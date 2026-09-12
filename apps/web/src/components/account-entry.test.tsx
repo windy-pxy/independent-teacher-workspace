@@ -16,10 +16,11 @@ describe("新教师注册", () => {
     expect(screen.queryByRole("button", { name: "注册教师账户" })).not.toBeInTheDocument();
   });
   it("先纠正密码不一致，注册成功必须保存恢复码才能继续", async () => {
-    vi.mocked(api).mockImplementation(async path => path === "/auth/registration" ? { enabled: true } : { recovery_code: "fictional-recovery-code-not-real" });
+    vi.mocked(api).mockImplementation(async path => path === "/auth/registration" ? { enabled: true, invite_required: true } : { recovery_code: "fictional-recovery-code-not-real" });
     render(<AccountEntry mode="register" />);
     const submit = await screen.findByRole("button", { name: "注册教师账户" });
     fireEvent.change(screen.getByLabelText(/账户名/), { target: { value: "fictional-teacher" } });
+    fireEvent.change(screen.getByLabelText(/邀请码/), { target: { value: "fictional-invite-code-long-enough" } });
     fireEvent.change(screen.getByLabelText(/^密码/), { target: { value: "fictional-password" } });
     fireEvent.change(screen.getByLabelText("再次输入密码"), { target: { value: "fictional-mismatch" } });
     fireEvent.click(screen.getByRole("checkbox", { name: /隐私说明/ }));
