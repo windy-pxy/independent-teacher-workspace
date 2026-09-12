@@ -1,5 +1,9 @@
 from teacher_workspace.performance_smoke import percentile
-from teacher_workspace.security_check import check_repository, repository_root
+from teacher_workspace.security_check import (
+    check_production_compose_hardening,
+    check_repository,
+    repository_root,
+)
 
 
 def test_percentile_uses_nearest_rank() -> None:
@@ -11,3 +15,7 @@ def test_repository_security_rules_pass() -> None:
     result = check_repository(repository_root())
     assert result["status"] == "ok"
     assert result["pinned_actions"] >= 1
+
+
+def test_production_services_keep_runtime_hardening() -> None:
+    assert check_production_compose_hardening(repository_root()) == []

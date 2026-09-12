@@ -133,6 +133,7 @@ pnpm check
 pnpm check:release
 pnpm security:static
 pnpm security:dependencies
+pnpm security:rotate-local -- --confirm rotate-local-secrets --disable-ai
 pnpm performance:smoke
 ```
 
@@ -154,6 +155,7 @@ cross-env PYTHONPATH=apps/backend/src uv run --project apps/backend --no-sync al
 - 本地文件默认写入 `var/storage`，已被 Git 忽略。
 - 所有示例必须使用虚构学生；不要把真实学生信息、上传件、导出文档或备份放入仓库。
 - 生产部署必须启用 TLS、`SESSION_COOKIE_SECURE=true`、强随机会话密钥和独立数据库密码。
+- 怀疑本机凭据泄露时，先执行 `pnpm backup:create`，再运行上面的显式轮换命令；该命令会使现有登录失效并把 AI 切回 Mock。随后仍须到模型提供商控制台撤销旧 Key。
 
 完整要求见 [docs/security.md](docs/security.md)。
 

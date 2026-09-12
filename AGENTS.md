@@ -42,6 +42,7 @@ pnpm check
 pnpm check:release
 pnpm security:static
 pnpm security:dependencies
+pnpm security:rotate-local -- --confirm rotate-local-secrets --disable-ai
 pnpm performance:smoke
 pnpm backup:create
 pnpm backup:verify -- <备份目录>

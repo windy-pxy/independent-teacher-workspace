@@ -14,6 +14,7 @@ SECRET_PATTERNS = [
     re.compile(rb"\bsk-[A-Za-z0-9_-]{20,}\b"),
 ]
 ACTION_PATTERN = re.compile(r"^\s*-?\s*uses:\s*[^@\s]+@([^\s#]+)", re.MULTILINE)
+PRODUCTION_HARDENED_SERVICES = ("migrate", "api", "worker", "web", "caddy")
 
 
 class SecurityCheckError(RuntimeError):
@@ -32,6 +33,33 @@ def tracked_files(root: Path) -> list[Path]:
         capture_output=True,
     )
     return [root / item.decode("utf-8") for item in result.stdout.split(b"\0") if item]
+
+
+def check_production_compose_hardening(root: Path) -> list[str]:
+    path = root / "compose.production.yaml"
+    text = path.read_text(encoding="utf-8")
+    failures: list[str] = []
+    anchor = text.split("services:", maxsplit=1)[0]
+    for required in (
+        "read_only: true",
+        "no-new-privileges:true",
+        "cap_drop:",
+        "- ALL",
+        "pids_limit: 256",
+    ):
+        if required not in anchor:
+            failures.append(f"production runtime hardening is missing: {required}")
+    for service in PRODUCTION_HARDENED_SERVICES:
+        match = re.search(
+            rf"(?ms)^  {re.escape(service)}:\s*\n(.*?)(?=^  [a-z][a-z0-9_-]*:\s*$|\Z)",
+            text,
+        )
+        if not match or "<<: *production-runtime" not in match.group(1):
+            failures.append(f"production service is not hardened: {service}")
+    caddy = re.search(r"(?ms)^  caddy:\s*\n(.*?)(?=^volumes:|\Z)", text)
+    if not caddy or "NET_BIND_SERVICE" not in caddy.group(1):
+        failures.append("production Caddy lacks the minimal port-binding capability")
+    return failures
 
 
 def check_repository(root: Path) -> dict[str, int | str]:
@@ -70,6 +98,7 @@ def check_repository(root: Path) -> dict[str, int | str]:
     for required in (".env", "backups/", "*.dump", "*.key", "var/"):
         if required not in gitignore:
             failures.append(f".gitignore is missing required pattern: {required}")
+    failures.extend(check_production_compose_hardening(root))
     if failures:
         raise SecurityCheckError("; ".join(failures))
     return {

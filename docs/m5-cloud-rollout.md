@@ -63,7 +63,16 @@ docker compose -f compose.yaml -f compose.production.yaml exec -T api \
 
 Caddy 是唯一公网入口并自动申请 HTTPS 证书；数据库、API、Web 不映射宿主机端口。域名解析和备案尚未完成时不要把注册打开。
 
+生产覆盖层会把 Web、API、Worker、迁移和 Caddy 的根文件系统设为只读，移除默认 Linux capabilities，禁止进程通过 `setuid`/`setgid` 获得新权限，并限制每个服务的进程数；只有 `/tmp` 和明确声明的数据卷可写。Caddy 仅恢复绑定 80/443 所需的 `NET_BIND_SERVICE` capability。服务器部署时不得为了省事删掉这些约束。
+
 若迁移容器报告 `Production DATABASE_URL must use a strong non-placeholder password`，先确认密码没有使用占位值、长度足够且没有上述 URL 保留字符；不要通过降低生产检查强度绕过错误。
+
+若本地密钥可能泄露，先备份，再执行显式确认的轮换命令；`--disable-ai` 会同时清空 DeepSeek/千问密钥并切回 Mock。完成后仍必须到模型提供商后台撤销旧 Key，脚本不能代替服务商侧吊销：
+
+```powershell
+pnpm backup:create
+pnpm security:rotate-local -- --confirm rotate-local-secrets --disable-ai
+```
 
 ## 迁移当前本机资料
 
@@ -135,6 +144,7 @@ pnpm production:verify-public -- https://你的域名 --expect-registration invi
 - 升级前备份 `20260912T023612Z-54cf63c5` 校验及隔离恢复通过：迁移 `0009`、37 张表、2 个存储文件。
 - 本地镜像构建及保留卷升级成功；迁移为 `20260912_0010`，Web/API 均返回 200，四个长期服务正常，升级前后关键业务数量一致。
 - 使用隔离 Compose 项目和虚构域名 `teacher.localhost` 完成生产模式启动演练：迁移到 `20260912_0010`、生产配置检查、Caddy HTTPS 反向代理、Web/API 健康检查和安全响应头均通过。由于使用本地 CA 和虚构域名，这不替代真实证书、公网 DNS 或跨网络验收。
+- 加固后再次以隔离生产栈验证：Web/API/Worker/Caddy 均为只读根文件系统、移除默认 capabilities、禁止权限提升并限制进程数；根文件系统写入被拒绝，`/tmp` 与对象存储卷仍可正常写入，HTTPS 和迁移保持通过。
 
 这些证据只证明本地预部署包可用，不替代真实域名、HTTPS、云端恢复、服务器重启及跨网络试用。
 
