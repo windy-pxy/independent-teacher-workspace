@@ -30,7 +30,9 @@
 - AI 与文件存储统一接口；OpenAI 使用 Responses API，DeepSeek 使用官方兼容接口，模型名均只由环境变量配置。
 - 前后端 lint、类型检查、测试、构建及 GitHub Actions。
 
-详细文档见 [docs/requirements.md](docs/requirements.md)、[docs/architecture.md](docs/architecture.md)、[docs/data-model.md](docs/data-model.md) 和 [docs/roadmap.md](docs/roadmap.md)。
+详细文档见 [docs/requirements.md](docs/requirements.md)、[docs/architecture.md](docs/architecture.md)、[docs/data-model.md](docs/data-model.md) 和 [docs/roadmap.md](docs/roadmap.md)。多人云端试用另见 [M5 云端部署手册](docs/m5-cloud-rollout.md)。
+
+准备录入真实学生前，请先按 [正式使用准备与首次使用清单](docs/go-live-checklist.md) 完成启动、备份和安全核对。
 
 ## 前置条件
 

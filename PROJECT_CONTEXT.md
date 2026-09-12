@@ -8,10 +8,10 @@
 - 产品正从单教师本机工作台升级为“多个独立教师各自注册、登录并管理私人教学资料”的在线工作台。
 - 原 Phase 0—8 已验收。多教师升级使用 M1—M5：M1—M4 已提交推送；M5 本地预部署开发与验证已完成，真实服务器、域名和跨网络验收仍待用户购买资源。
 - 当前分支 `main`，私有远程 `https://github.com/windy-pxy/independent-teacher-workspace.git`。
-- 当前 M4 提交 / `origin/main`：`3776f0157e14402eebd689eca51a18c293e1e1c6`，提交说明为 M4 公网运行前安全准备。M5 工作区状态以 Git 实际结果为准。
+- 当前 M5 预部署提交 / `origin/main`：`c6f40cada167695882c968cadf52d4104c527dab`，提交说明为 M5 云端预部署安全门槛。
 - 当前 Compose 已运行 M5 本地预部署版本：邀请码注册、单教师上传额度和公网检查工具已部署；Web/API/数据库健康，Worker 运行，迁移头为 `20260912_0010`。升级前后账户、学生、学科、课程和资料数量一致，过程中未删除卷。真实公网仍未部署。
 - `.env` 含实际服务配置，禁止打印、提交、截图或写入本文。
-- 本轮开始前已经存在 `README.md` 两行改动和未跟踪的 `docs/go-live-checklist.md`；它们不属于 M4，不得误删、重置或混入 M4 提交。
+- “正式使用准备与首次使用清单”已按当前本机/云端双路径更新；提交状态以 Git 为准。
 - M4 备份 `var/backups/20260912T015023Z-4cc68076` 已创建、校验并在一次性 PostgreSQL 中恢复成功；它未加密、位于 Git 忽略目录、不得上传。
 
 ## 2. 已完成内容
@@ -58,7 +58,7 @@
 ├─ apps/
 │  ├─ web/                         Next.js 16、账户/隐私/业务页面
 │  └─ backend/
-│     ├─ alembic/versions/         当前待部署迁移 20260911_0009
+│     ├─ alembic/versions/         当前迁移 20260912_0010
 │     ├─ src/teacher_workspace/
 │     │  ├─ auth.py                会话、注册、隐私、导出/删除、AI 额度
 │     │  ├─ account_export.py      当前教师安全 ZIP 导出
@@ -77,6 +77,8 @@
 │  ├─ multi-teacher-roadmap.md
 │  ├─ m3-isolation-verification.md
 │  ├─ m4-public-readiness.md
+│  ├─ m5-cloud-rollout.md
+│  ├─ go-live-checklist.md
 │  └─ cloud-purchase-guide.md
 ├─ compose.yaml / compose.production.yaml / compose.validation.yaml
 └─ var/                             存储、导出、验证证据和备份；全部忽略
