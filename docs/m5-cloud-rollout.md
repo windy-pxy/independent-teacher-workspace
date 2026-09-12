@@ -21,15 +21,22 @@
 2. 按 Docker 官方 Ubuntu 文档安装 Docker Engine 与 Compose 插件，并启用 Docker 自启动。
 3. 云防火墙只开放 80/443；22 仅允许管理员固定来源。5432、8000、3000 不向公网开放。
 4. 使用 GitHub 私有仓库的只读 deploy key 克隆到 `/opt/teacher-workspace/app`；不要把个人访问令牌写进远程 URL。
-5. 在项目根创建权限为 `600` 的 `.env`。至少填写真实域名、真实支持联系方式、两个独立强随机密钥，并保持邀请码模式：
+5. 在项目根创建权限为 `600` 的 `.env`。至少填写真实域名、真实支持联系方式、两个独立强随机密钥，并保持邀请码模式。当前 Compose 会把 `POSTGRES_PASSWORD` 放入数据库 URL，因此该密码只能使用 URL 安全字符；推荐直接使用小写十六进制，不要使用包含 `/`、`+`、`=`、`@` 或 `:` 的 Base64/普通密码：
+
+```bash
+openssl rand -hex 48  # 用作 SESSION_SECRET，输出 96 位
+openssl rand -hex 32  # 用作 POSTGRES_PASSWORD，输出 64 位
+```
+
+两条命令的输出必须分别生成、只粘贴到服务器 `.env`，不要发送到聊天、截图或 GitHub：
 
 ```dotenv
 APP_ENV=production
 APP_DOMAIN=你的已备案域名
 SUPPORT_CONTACT=你的真实联系邮箱或其他有效方式
 SESSION_COOKIE_SECURE=true
-SESSION_SECRET=至少48位随机字符串
-POSTGRES_PASSWORD=至少16位且与会话密钥不同的随机字符串
+SESSION_SECRET=96位独立小写十六进制随机字符串
+POSTGRES_PASSWORD=64位独立小写十六进制随机字符串
 TRUSTED_ORIGINS=https://你的已备案域名
 TRUSTED_HOSTS=api,localhost,127.0.0.1
 REGISTRATION_ENABLED=false
@@ -55,6 +62,8 @@ docker compose -f compose.yaml -f compose.production.yaml exec -T api \
 ```
 
 Caddy 是唯一公网入口并自动申请 HTTPS 证书；数据库、API、Web 不映射宿主机端口。域名解析和备案尚未完成时不要把注册打开。
+
+若迁移容器报告 `Production DATABASE_URL must use a strong non-placeholder password`，先确认密码没有使用占位值、长度足够且没有上述 URL 保留字符；不要通过降低生产检查强度绕过错误。
 
 ## 迁移当前本机资料
 
@@ -125,6 +134,7 @@ pnpm production:verify-public -- https://你的域名 --expect-registration invi
 - Edge 以两位不熟悉系统的虚构教师完成邀请码注册、空数据、持久化、跨账户隔离和多标签换号阻断，页面异常 0；Mock AI 未产生费用。
 - 升级前备份 `20260912T023612Z-54cf63c5` 校验及隔离恢复通过：迁移 `0009`、37 张表、2 个存储文件。
 - 本地镜像构建及保留卷升级成功；迁移为 `20260912_0010`，Web/API 均返回 200，四个长期服务正常，升级前后关键业务数量一致。
+- 使用隔离 Compose 项目和虚构域名 `teacher.localhost` 完成生产模式启动演练：迁移到 `20260912_0010`、生产配置检查、Caddy HTTPS 反向代理、Web/API 健康检查和安全响应头均通过。由于使用本地 CA 和虚构域名，这不替代真实证书、公网 DNS 或跨网络验收。
 
 这些证据只证明本地预部署包可用，不替代真实域名、HTTPS、云端恢复、服务器重启及跨网络试用。
 
