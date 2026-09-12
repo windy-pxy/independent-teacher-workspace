@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from teacher_workspace.models import AIJob, AIJobAttempt, AIJobStatus
+from teacher_workspace.models import AIJob, AIJobAttempt, AIJobStatus, AIUsageMonth
 
 
 def now_utc() -> datetime:
@@ -101,6 +101,51 @@ async def complete_job(
             attempt.output_tokens = (
                 int(output_tokens) if isinstance(output_tokens, int) else None
             )
+            attempt.finished_at = now_utc()
+        if job.owner_user_id is not None:
+            recorded_input_tokens = attempt.input_tokens if attempt and attempt.input_tokens else 0
+            recorded_output_tokens = (
+                attempt.output_tokens if attempt and attempt.output_tokens else 0
+            )
+            await session.execute(
+                update(AIUsageMonth)
+                .where(
+                    AIUsageMonth.owner_user_id == job.owner_user_id,
+                    AIUsageMonth.month_key == job.created_at.strftime("%Y-%m"),
+                )
+                .values(
+                    input_tokens=AIUsageMonth.input_tokens + recorded_input_tokens,
+                    output_tokens=AIUsageMonth.output_tokens + recorded_output_tokens,
+                    updated_at=now_utc(),
+                )
+            )
+
+
+async def cancel_job(
+    session_factory: async_sessionmaker[AsyncSession],
+    job_id: uuid.UUID,
+    error_code: str,
+    safe_message: str,
+) -> None:
+    async with session_factory() as session, session.begin():
+        job = await session.get(AIJob, job_id, with_for_update=True)
+        if job is None:
+            raise LookupError(f"Unknown job {job_id}")
+        job.status = AIJobStatus.CANCELED
+        job.error_code = error_code
+        job.error_message = safe_message[:1000]
+        job.leased_by = None
+        job.lease_expires_at = None
+        attempt = await session.scalar(
+            select(AIJobAttempt).where(
+                AIJobAttempt.job_id == job_id,
+                AIJobAttempt.attempt_number == job.attempts_count,
+            )
+        )
+        if attempt:
+            attempt.status = "CANCELED"
+            attempt.error_code = error_code
+            attempt.error_message = safe_message[:1000]
             attempt.finished_at = now_utc()
 
 

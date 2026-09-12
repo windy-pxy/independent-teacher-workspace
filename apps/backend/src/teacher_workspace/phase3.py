@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from teacher_workspace.auth import AIUserDep, CsrfUserDep, UserDep
+from teacher_workspace.auth import AIUserDep, CsrfUserDep, UserDep, reserve_ai_usage
 from teacher_workspace.config import get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.feedback_contract import LessonFeedbackContent
@@ -311,6 +311,7 @@ async def organize_feedback(
         raise api_error(409, "FEEDBACK_JOB_IN_PROGRESS", "反馈正在由 AI 整理")
     _template_entity, template = await ensure_default_feedback_template(session, user.id)
     settings = get_settings()
+    await reserve_ai_usage(user, session)
     job = AIJob(
         owner_user_id=user.id,
         prompt_template_version_id=template.id,

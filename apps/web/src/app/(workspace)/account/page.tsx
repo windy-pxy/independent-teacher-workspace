@@ -2,15 +2,18 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { PageHeader, ErrorNotice } from "@/components/page-ui";
-import { api, jsonBody } from "@/lib/api";
+import { api, apiBlob, jsonBody } from "@/lib/api";
 import { clearSessionCache } from "@/lib/session-cache";
 import { broadcastAuthChanged, clearTabUserId } from "@/lib/account-context";
+import type { AuthUser } from "@/lib/types";
 
 type Session = { id: string; created_at: string; expires_at: string; is_current: boolean };
 
 export default function AccountPage() {
   const client = useQueryClient();
+  const account = useQuery({ queryKey: ["auth", "me"], queryFn: () => api<AuthUser>("/auth/me") });
   const sessions = useQuery({ queryKey: ["account-sessions"], queryFn: () => api<Session[]>("/auth/sessions") });
   const [error, setError] = useState<unknown>();
   const [message, setMessage] = useState("");
@@ -54,6 +57,44 @@ export default function AccountPage() {
       setMessage("其他设备已退出，当前登录保持有效。");
     } catch (caught) { setError(caught); } finally { setBusy(false); }
   }
+  async function exportData() {
+    setBusy(true); setError(undefined); setMessage("");
+    try {
+      const result = await apiBlob("/auth/data-export.zip", { method: "POST" });
+      const url = URL.createObjectURL(result.blob);
+      const anchor = document.createElement("a");
+      anchor.href = url; anchor.download = result.filename; anchor.click();
+      URL.revokeObjectURL(url);
+      setMessage("账户资料导出已开始下载，请妥善保管压缩包。");
+    } catch (caught) { setError(caught); } finally { setBusy(false); }
+  }
+  async function requestDeletion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const values = new FormData(form);
+    setBusy(true); setError(undefined); setMessage("");
+    try {
+      await api<{ scheduled_for: string }>("/auth/deletion-request", {
+        method: "POST",
+        ...jsonBody({
+          current_password: values.get("current"),
+          confirm_username: values.get("username"),
+        }),
+      });
+      await client.invalidateQueries({ queryKey: ["auth", "me"] });
+      await client.invalidateQueries({ queryKey: ["account-sessions"] });
+      form.reset();
+      setMessage("账户删除申请已提交。撤销期内可在本页取消；到期后资料将永久删除。");
+    } catch (caught) { setError(caught); } finally { setBusy(false); }
+  }
+  async function cancelDeletion() {
+    setBusy(true); setError(undefined); setMessage("");
+    try {
+      await api<void>("/auth/deletion-cancel", { method: "POST" });
+      await client.invalidateQueries({ queryKey: ["auth", "me"] });
+      setMessage("账户删除申请已取消，资料会继续保留。");
+    } catch (caught) { setError(caught); } finally { setBusy(false); }
+  }
   return <>
     <PageHeader title="账户安全" description="管理密码、恢复码和登录会话。退出登录不会删除已保存的教学资料。" />
     {error ? <ErrorNotice error={error} /> : null}
@@ -77,6 +118,24 @@ export default function AccountPage() {
       <section className="card lg:col-span-2"><h2 className="text-xl font-semibold">有效登录会话</h2>
         {sessions.error ? <ErrorNotice error={sessions.error} /> : sessions.isPending ? <p>正在读取…</p> : <ul className="my-4 space-y-2">{sessions.data?.map(item => <li key={item.id}>{item.is_current ? "当前设备" : "其他登录会话"} · 登录时间 {new Date(item.created_at).toLocaleString("zh-CN")}</li>)}</ul>}
         <button className="button-secondary" disabled={busy || !sessions.data?.some(item => !item.is_current)} onClick={revoke}>退出其他所有会话</button>
+      </section>
+      <section className="card lg:col-span-2"><h2 className="text-xl font-semibold">数据与隐私</h2>
+        <p className="my-3 text-sm leading-7">下载当前账户的结构化记录、上传附件和已生成文档。压缩包可能包含学生隐私，请只保存在你控制的加密设备中。</p>
+        <div className="flex flex-wrap gap-3"><button className="button-primary" type="button" disabled={busy} onClick={exportData}>导出我的全部资料</button><Link className="button-secondary" href="/privacy" target="_blank">查看隐私说明</Link></div>
+      </section>
+      <section className="card border border-red-200 lg:col-span-2">
+        <h2 className="text-xl font-semibold text-red-900">删除账户与全部资料</h2>
+        {account.isPending ? <p className="my-3">正在读取账户状态…</p> : account.error ? <ErrorNotice error={account.error} /> : account.data?.deletion_scheduled_for ? <div className="mt-3 space-y-4">
+          <p className="leading-7">删除申请已生效，预计在 <strong>{new Date(account.data.deletion_scheduled_for).toLocaleString("zh-CN")}</strong> 后永久清除。撤销期内仍可导出资料或取消申请。</p>
+          <button className="button-secondary" type="button" disabled={busy} onClick={cancelDeletion}>取消删除，继续保留账户</button>
+        </div> : <>
+          <p className="my-3 text-sm leading-7">建议先点击上方“导出我的全部资料”。提交后，其他设备会立即退出；当前设备可在撤销期内取消。到期清除后无法恢复。</p>
+          <form className="grid gap-4 md:max-w-xl" onSubmit={requestDeletion}>
+            <label><span className="label">输入账户名 <strong>{account.data?.username}</strong> 确认</span><input className="field" name="username" autoComplete="username" required /></label>
+            <label><span className="label">验证当前密码</span><input className="field" name="current" type="password" autoComplete="current-password" maxLength={200} required /></label>
+            <button className="button-secondary border-red-300 text-red-900" disabled={busy}>申请删除账户</button>
+          </form>
+        </>}
       </section>
     </div>
   </>;

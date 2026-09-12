@@ -11,7 +11,7 @@ from fastapi.responses import Response
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from teacher_workspace.auth import AIUserDep, CsrfUserDep, UserDep
+from teacher_workspace.auth import AIUserDep, CsrfUserDep, UserDep, reserve_ai_usage
 from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.models import (
@@ -324,6 +324,7 @@ async def create_wrong_question_from_image(
     detected = detect_image(content)
     if detected is None or image.content_type != detected[0]:
         raise api_error(422, "INVALID_FILE_CONTENT", "图片类型、MIME 或文件内容不一致")
+    await reserve_ai_usage(user, session)
     object_key = f"wrong-questions/{user.id}/{uuid.uuid4()}{detected[1]}"
     storage = create_storage_provider(settings)
     await storage.save(object_key, content)
@@ -705,6 +706,7 @@ async def generate_question_set(
         )
         if count != len(set(payload.wrong_question_ids)):
             raise api_error(422, "INVALID_WRONG_QUESTION", "包含不可用或未批准的错题")
+    await reserve_ai_usage(user, session)
     parameters = payload.model_dump(mode="json")
     question_set = GeneratedQuestionSet(
         student_subject_id=student_subject.id,

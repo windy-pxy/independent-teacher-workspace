@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 from teacher_workspace.config import Settings
-from teacher_workspace.models import AIJob, AIJobStatus, Base
+from teacher_workspace.models import AIJob, AIJobStatus, Base, User
 from teacher_workspace.queue import claim_next_job, heartbeat
 from teacher_workspace.worker import run_once
 
@@ -86,3 +86,35 @@ async def test_expired_lease_is_reclaimed_and_heartbeat_extends_it(
     assert claimed == job_id
     assert await heartbeat(session_factory, job_id, "replacement-worker", 120)
     assert not await heartbeat(session_factory, job_id, "wrong-worker", 120)
+
+
+@pytest.mark.asyncio
+async def test_worker_cancels_owned_job_after_account_deletion_is_requested(
+    session_factory,
+) -> None:  # type: ignore[no-untyped-def]
+    settings = Settings(session_secret="x" * 32, worker_id="test-worker")
+    async with session_factory() as session, session.begin():
+        owner = User(
+            username="revoked-ai-owner",
+            password_hash="fictional",
+            ai_access_enabled=True,
+            ai_monthly_job_limit=10,
+            deletion_scheduled_for=datetime.now(UTC) + timedelta(days=7),
+        )
+        session.add(owner)
+        await session.flush()
+        job = AIJob(
+            owner_user_id=owner.id,
+            task_type="mock.success",
+            available_at=datetime.now(UTC),
+        )
+        session.add(job)
+        await session.flush()
+        job_id = job.id
+
+    assert await run_once(session_factory, settings)
+    async with session_factory() as session:
+        canceled = await session.get(AIJob, job_id)
+        assert canceled is not None
+        assert canceled.status == AIJobStatus.CANCELED
+        assert canceled.error_code == "AI_ACCESS_REVOKED"

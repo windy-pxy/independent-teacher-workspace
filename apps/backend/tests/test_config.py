@@ -79,6 +79,32 @@ def test_valid_production_configuration_is_accepted() -> None:
     assert settings.app_env == "production"
 
 
+def test_public_registration_requires_operator_contact_in_production() -> None:
+    with pytest.raises(ValidationError, match="SUPPORT_CONTACT"):
+        Settings(
+            app_env="production",
+            app_domain="teacher.example",
+            session_secret="p" * 48,
+            session_cookie_secure=True,
+            trusted_origins=["https://teacher.example"],
+            trusted_hosts=["api"],
+            database_url="postgresql+asyncpg://teacher_workspace:strong-password-1@db/app",
+            registration_enabled=True,
+        )
+    settings = Settings(
+        app_env="production",
+        app_domain="teacher.example",
+        session_secret="p" * 48,
+        session_cookie_secure=True,
+        trusted_origins=["https://teacher.example"],
+        trusted_hosts=["api"],
+        database_url="postgresql+asyncpg://teacher_workspace:strong-password-1@db/app",
+        registration_enabled=True,
+        support_contact="support@real-domain.cn",
+    )
+    assert settings.registration_enabled
+
+
 def test_production_supabase_storage_requires_server_credentials() -> None:
     with pytest.raises(ValidationError, match="Supabase storage"):
         Settings(

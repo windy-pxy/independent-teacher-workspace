@@ -135,3 +135,13 @@ class AISettingsResponse(BaseModel):
     vision_model: str | None
     real_vision_provider_configured: bool
     development_default_is_mock: bool = True
+
+
+class AIUsageResponse(BaseModel):
+    month: str
+    access_enabled: bool
+    monthly_job_limit: int
+    jobs_used: int
+    jobs_remaining: int
+    input_tokens: int
+    output_tokens: int

@@ -8,6 +8,8 @@ import { broadcastAuthChanged, clearTabUserId } from "@/lib/account-context";
 
 export function AccountEntry({ mode }: { mode: "register" | "recover" }) {
   const [enabled, setEnabled] = useState<boolean>();
+  const [privacyVersion, setPrivacyVersion] = useState("2026-09-11");
+  const [supportContact, setSupportContact] = useState<string>();
   const [error, setError] = useState<unknown>();
   const [busy, setBusy] = useState(false);
   const [code, setCode] = useState("");
@@ -15,8 +17,8 @@ export function AccountEntry({ mode }: { mode: "register" | "recover" }) {
   const [saved, setSaved] = useState(false);
   const [done, setDone] = useState(false);
   useEffect(() => {
-    if (mode === "register") api<{ enabled: boolean }>("/auth/registration")
-      .then(value => setEnabled(value.enabled)).catch(setError);
+    if (mode === "register") api<{ enabled: boolean; privacy_notice_version: string; support_contact?: string }>("/auth/registration")
+      .then(value => { setEnabled(value.enabled); setPrivacyVersion(value.privacy_notice_version); setSupportContact(value.support_contact); }).catch(setError);
   }, [mode]);
   useEffect(() => {
     if (!code || saved) return;
@@ -36,7 +38,13 @@ export function AccountEntry({ mode }: { mode: "register" | "recover" }) {
     try {
       if (mode === "register") {
         const response = await api<{ recovery_code: string }>("/auth/register", {
-          method: "POST", ...jsonBody({ username, password, password_confirmation: password }),
+          method: "POST", ...jsonBody({
+            username,
+            password,
+            password_confirmation: password,
+            privacy_notice_accepted: values.get("privacy_notice_accepted") === "on",
+            privacy_notice_version: privacyVersion,
+          }),
         });
         setRegisteredName(username);
         setCode(response.recovery_code);
@@ -72,6 +80,8 @@ export function AccountEntry({ mode }: { mode: "register" | "recover" }) {
           {mode === "recover" ? <label><span className="label">恢复码</span><input className="field" name="recovery_code" autoComplete="off" required minLength={20} maxLength={128} /></label> : null}
           <label><span className="label">{mode === "recover" ? "新密码" : "密码"}（12–200 个字符）</span><input className="field" name="password" type="password" autoComplete="new-password" required minLength={12} maxLength={200} /></label>
           <label><span className="label">再次输入密码</span><input className="field" name="confirmation" type="password" autoComplete="new-password" required minLength={12} maxLength={200} /></label>
+          {mode === "register" ? <label className="flex items-start gap-2 text-sm leading-6"><input className="mt-1" name="privacy_notice_accepted" type="checkbox" required />我已阅读并同意 <Link className="underline" href="/privacy" target="_blank">隐私说明</Link>，了解学生资料和 AI 处理方式。</label> : null}
+          {mode === "register" && supportContact ? <p className="text-xs text-[var(--muted)]">隐私与账户问题联系：{supportContact}</p> : null}
           <button className="button-primary w-full" disabled={busy}>{busy ? "正在处理…" : mode === "register" ? "注册教师账户" : "重设密码"}</button>
         </form>}
       {!code && !done ? <Link className="mt-6 inline-block underline" href="/login">返回登录</Link> : null}

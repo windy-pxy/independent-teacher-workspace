@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from typing import Annotated
 from urllib.parse import quote
 
@@ -8,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from teacher_workspace.auth import AIUserDep, CsrfUserDep, UserDep
+from teacher_workspace.auth import AIUserDep, CsrfUserDep, UserDep, reserve_ai_usage
 from teacher_workspace.config import get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.docx_generator import (
@@ -19,6 +20,7 @@ from teacher_workspace.docx_generator import (
 from teacher_workspace.models import (
     AIJob,
     AIJobStatus,
+    AIUsageMonth,
     AuditLog,
     DocumentVersion,
     DocumentVersionSource,
@@ -35,6 +37,7 @@ from teacher_workspace.models import (
 from teacher_workspace.phase2_schemas import (
     AIJobResponse,
     AISettingsResponse,
+    AIUsageResponse,
     DocumentVersionResponse,
     GenerateLessonPlanRequest,
     LessonDocumentResponse,
@@ -148,6 +151,23 @@ async def get_ai_settings(_: UserDep) -> AISettingsResponse:
         vision_provider=settings.vision_ai_provider,
         vision_model=configured_vision_model(settings),
         real_vision_provider_configured=real_vision_provider_configured(settings),
+    )
+
+
+@router.get("/ai-usage", response_model=AIUsageResponse)
+async def get_ai_usage(user: UserDep, session: SessionDep) -> AIUsageResponse:
+    month = datetime.now(UTC).strftime("%Y-%m")
+    usage = await session.get(AIUsageMonth, (user.id, month))
+    used = usage.job_count if usage else 0
+    limit = user.ai_monthly_job_limit if user.ai_access_enabled else 0
+    return AIUsageResponse(
+        month=month,
+        access_enabled=user.ai_access_enabled and limit > 0,
+        monthly_job_limit=limit,
+        jobs_used=used,
+        jobs_remaining=max(0, limit - used),
+        input_tokens=usage.input_tokens if usage else 0,
+        output_tokens=usage.output_tokens if usage else 0,
     )
 
 
@@ -337,6 +357,7 @@ async def generate_lesson_document(
     ).all()
     if any(job.input_payload.get("document_id") == str(document.id) for job in running_jobs):
         raise api_error(409, "GENERATION_IN_PROGRESS", "该教案已有生成任务正在处理")
+    await reserve_ai_usage(user, session)
     job = AIJob(
         owner_user_id=user.id,
         prompt_template_version_id=template_version.id,
@@ -465,6 +486,7 @@ async def regenerate_document_section(
     if any(job.input_payload.get("document_id") == str(document.id) for job in running_jobs):
         raise api_error(409, "GENERATION_IN_PROGRESS", "该教案已有生成任务正在处理")
     template_version = await resolve_template_version(session, user.id, None)
+    await reserve_ai_usage(user, session)
     job = AIJob(
         owner_user_id=user.id,
         prompt_template_version_id=template_version.id,

@@ -38,6 +38,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ai-usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Ai Usage */
+        get: operations["get_ai_usage_api_v1_ai_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/data-export.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export Account Data */
+        post: operations["export_account_data_api_v1_auth_data_export_zip_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/deletion-cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Account Deletion */
+        post: operations["cancel_account_deletion_api_v1_auth_deletion_cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/deletion-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Account Deletion */
+        post: operations["request_account_deletion_api_v1_auth_deletion_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -1543,6 +1611,38 @@ export interface components {
             /** Vision Provider */
             vision_provider: string;
         };
+        /** AIUsageResponse */
+        AIUsageResponse: {
+            /** Access Enabled */
+            access_enabled: boolean;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Jobs Remaining */
+            jobs_remaining: number;
+            /** Jobs Used */
+            jobs_used: number;
+            /** Month */
+            month: string;
+            /** Monthly Job Limit */
+            monthly_job_limit: number;
+            /** Output Tokens */
+            output_tokens: number;
+        };
+        /** AccountDeletionRequest */
+        AccountDeletionRequest: {
+            /** Confirm Username */
+            confirm_username: string;
+            /** Current Password */
+            current_password: string;
+        };
+        /** AccountDeletionStatus */
+        AccountDeletionStatus: {
+            /**
+             * Scheduled For
+             * Format: date-time
+             */
+            scheduled_for: string;
+        };
         /** ArchiveRequest */
         ArchiveRequest: {
             /** Reason */
@@ -1561,6 +1661,8 @@ export interface components {
         };
         /** AuthUser */
         AuthUser: {
+            /** Deletion Scheduled For */
+            deletion_scheduled_for?: string | null;
             /**
              * Id
              * Format: uuid
@@ -2830,6 +2932,16 @@ export interface components {
             password: string;
             /** Password Confirmation */
             password_confirmation: string;
+            /**
+             * Privacy Notice Accepted
+             * @constant
+             */
+            privacy_notice_accepted: true;
+            /**
+             * Privacy Notice Version
+             * @constant
+             */
+            privacy_notice_version: "2026-09-11";
             /** Username */
             username: string;
         };
@@ -2844,6 +2956,13 @@ export interface components {
         RegistrationConfig: {
             /** Enabled */
             enabled: boolean;
+            /**
+             * Privacy Notice Version
+             * @default 2026-09-11
+             */
+            privacy_notice_version: string;
+            /** Support Contact */
+            support_contact?: string | null;
         };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
@@ -3350,6 +3469,97 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AISettingsResponse"];
+                };
+            };
+        };
+    };
+    get_ai_usage_api_v1_ai_usage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIUsageResponse"];
+                };
+            };
+        };
+    };
+    export_account_data_api_v1_auth_data_export_zip_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    cancel_account_deletion_api_v1_auth_deletion_cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    request_account_deletion_api_v1_auth_deletion_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountDeletionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDeletionStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

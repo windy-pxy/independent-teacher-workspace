@@ -6,6 +6,7 @@ services:
     environment: &production-backend-environment
       APP_ENV: production
       APP_DOMAIN: ${APP_DOMAIN:-teacher.example.invalid}
+      SUPPORT_CONTACT: ${SUPPORT_CONTACT:-}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-teacher_workspace}:${POSTGRES_PASSWORD:-change-me-local-only}@db:5432/${POSTGRES_DB:-teacher_workspace}
       SESSION_SECRET: ${SESSION_SECRET:-development-only-replace-me-with-32-characters}
       SESSION_COOKIE_SECURE: "true"
@@ -19,6 +20,7 @@ services:
       REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
       REGISTRATION_LIMIT_PER_HOUR: ${REGISTRATION_LIMIT_PER_HOUR:-10}
       AUTH_GLOBAL_LIMIT_PER_MINUTE: ${AUTH_GLOBAL_LIMIT_PER_MINUTE:-120}
+      ACCOUNT_DELETION_GRACE_DAYS: ${ACCOUNT_DELETION_GRACE_DAYS:-7}
       AI_PROVIDER: ${AI_PROVIDER:-mock}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-}

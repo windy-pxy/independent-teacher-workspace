@@ -40,6 +40,8 @@ async def phase7_context(
             User(
                 username="phase7-teacher",
                 password_hash=PasswordHash.recommended().hash("fictional-password"),
+                ai_access_enabled=True,
+                ai_monthly_job_limit=100,
             )
         )
     settings = Settings(

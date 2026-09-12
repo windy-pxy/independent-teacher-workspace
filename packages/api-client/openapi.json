@@ -155,6 +155,85 @@
         "title": "AISettingsResponse",
         "type": "object"
       },
+      "AIUsageResponse": {
+        "properties": {
+          "access_enabled": {
+            "title": "Access Enabled",
+            "type": "boolean"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "jobs_remaining": {
+            "title": "Jobs Remaining",
+            "type": "integer"
+          },
+          "jobs_used": {
+            "title": "Jobs Used",
+            "type": "integer"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "monthly_job_limit": {
+            "title": "Monthly Job Limit",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "access_enabled",
+          "monthly_job_limit",
+          "jobs_used",
+          "jobs_remaining",
+          "input_tokens",
+          "output_tokens"
+        ],
+        "title": "AIUsageResponse",
+        "type": "object"
+      },
+      "AccountDeletionRequest": {
+        "properties": {
+          "confirm_username": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Confirm Username",
+            "type": "string"
+          },
+          "current_password": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Current Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "current_password",
+          "confirm_username"
+        ],
+        "title": "AccountDeletionRequest",
+        "type": "object"
+      },
+      "AccountDeletionStatus": {
+        "properties": {
+          "scheduled_for": {
+            "format": "date-time",
+            "title": "Scheduled For",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scheduled_for"
+        ],
+        "title": "AccountDeletionStatus",
+        "type": "object"
+      },
       "ArchiveRequest": {
         "properties": {
           "reason": {
@@ -205,6 +284,18 @@
       },
       "AuthUser": {
         "properties": {
+          "deletion_scheduled_for": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deletion Scheduled For"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -3647,6 +3738,16 @@
             "title": "Password Confirmation",
             "type": "string"
           },
+          "privacy_notice_accepted": {
+            "const": true,
+            "title": "Privacy Notice Accepted",
+            "type": "boolean"
+          },
+          "privacy_notice_version": {
+            "const": "2026-09-11",
+            "title": "Privacy Notice Version",
+            "type": "string"
+          },
           "username": {
             "pattern": "^[a-z][a-z0-9_-]{2,39}$",
             "title": "Username",
@@ -3656,7 +3757,9 @@
         "required": [
           "username",
           "password",
-          "password_confirmation"
+          "password_confirmation",
+          "privacy_notice_accepted",
+          "privacy_notice_version"
         ],
         "title": "RegisterRequest",
         "type": "object"
@@ -3684,6 +3787,22 @@
           "enabled": {
             "title": "Enabled",
             "type": "boolean"
+          },
+          "privacy_notice_version": {
+            "default": "2026-09-11",
+            "title": "Privacy Notice Version",
+            "type": "string"
+          },
+          "support_contact": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support Contact"
           }
         },
         "required": [
@@ -5115,6 +5234,101 @@
         "summary": "Get Ai Settings",
         "tags": [
           "lesson-documents"
+        ]
+      }
+    },
+    "/api/v1/ai-usage": {
+      "get": {
+        "operationId": "get_ai_usage_api_v1_ai_usage_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIUsageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Ai Usage",
+        "tags": [
+          "lesson-documents"
+        ]
+      }
+    },
+    "/api/v1/auth/data-export.zip": {
+      "post": {
+        "operationId": "export_account_data_api_v1_auth_data_export_zip_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Export Account Data",
+        "tags": [
+          "authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/deletion-cancel": {
+      "post": {
+        "operationId": "cancel_account_deletion_api_v1_auth_deletion_cancel_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Cancel Account Deletion",
+        "tags": [
+          "authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/deletion-request": {
+      "post": {
+        "operationId": "request_account_deletion_api_v1_auth_deletion_request_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountDeletionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDeletionStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Account Deletion",
+        "tags": [
+          "authentication"
         ]
       }
     },

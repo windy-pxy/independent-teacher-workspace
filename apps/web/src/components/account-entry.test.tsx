@@ -22,6 +22,7 @@ describe("新教师注册", () => {
     fireEvent.change(screen.getByLabelText(/账户名/), { target: { value: "fictional-teacher" } });
     fireEvent.change(screen.getByLabelText(/^密码/), { target: { value: "fictional-password" } });
     fireEvent.change(screen.getByLabelText("再次输入密码"), { target: { value: "fictional-mismatch" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: /隐私说明/ }));
     fireEvent.click(submit);
     expect(await screen.findByRole("alert")).toHaveTextContent("两次密码不一致");
     expect(vi.mocked(api).mock.calls.filter(([path]) => path === "/auth/register")).toHaveLength(0);

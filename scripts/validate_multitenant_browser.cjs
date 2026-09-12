@@ -15,6 +15,7 @@ async function register(page, username) {
   await page.getByLabel(/账户名/).fill(username);
   await page.getByLabel(/^密码/).fill(password);
   await page.getByLabel("再次输入密码").fill(password);
+  await page.getByRole("checkbox", { name: /隐私说明/ }).check();
   await page.getByRole("button", { name: "注册教师账户" }).click();
   await expect(page.getByText("注册成功，请先保存恢复码")).toBeVisible();
   await page.getByRole("checkbox").check();
@@ -83,6 +84,29 @@ async function persistenceAndTabs(browser, errors) {
   await pageB.getByRole("button", { name: "留在本页" }).click();
   await expect(pageB.getByLabel("姓名或代号", { exact: true })).toHaveValue("尚未保存的虚构学生");
   await pageB.getByLabel("姓名或代号", { exact: true }).fill("");
+
+  // A first-time teacher can discover the disabled AI state, export data,
+  // understand a deletion mistake, then schedule and cancel without developer help.
+  await pageB.getByRole("link", { name: "模板与 AI", exact: true }).click();
+  await expect(pageB.getByText(/当前账户尚未开通 AI 生成额度/)).toBeVisible();
+  await pageB.getByRole("link", { name: "账户安全", exact: true }).click();
+  const downloadPromise = pageB.waitForEvent("download");
+  await pageB.getByRole("button", { name: "导出我的全部资料" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/\.zip$/);
+  const deletionSection = pageB.getByRole("heading", { name: "删除账户与全部资料" })
+    .locator("..");
+  await deletionSection.getByLabel(/输入账户名/).fill("wrong-account-name");
+  await deletionSection.getByLabel("验证当前密码").fill(password);
+  await deletionSection.getByRole("button", { name: "申请删除账户" }).click();
+  await expect(pageB.getByRole("alert").filter({ hasText: "确认账户名不一致" })).toBeVisible();
+  await deletionSection.getByLabel(/输入账户名/).fill("fictional-browser-owner-b");
+  await deletionSection.getByRole("button", { name: "申请删除账户" }).click();
+  await expect(pageB.getByText(/账户删除申请已提交/)).toBeVisible();
+  await pageB.getByRole("button", { name: "取消删除，继续保留账户" }).click();
+  await expect(pageB.getByText(/账户删除申请已取消/)).toBeVisible();
+  await pageB.getByRole("link", { name: "学生档案", exact: true }).click();
+  await expect(pageB.getByRole("heading", { name: "B浏览器专属虚构学生" })).toBeVisible();
 
   const concurrent = await browser.newContext({ storageState: stateA });
   const concurrentPage = await concurrent.newPage();

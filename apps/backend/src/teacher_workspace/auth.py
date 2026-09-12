@@ -6,15 +6,21 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pwdlib import PasswordHash
 from sqlalchemy import func, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
+from teacher_workspace.account_export import build_account_export
 from teacher_workspace.account_schemas import (
+    AccountDeletionRequest,
+    AccountDeletionStatus,
     ConfirmPasswordRequest,
     PasswordChangeRequest,
     RecoveryResponse,
@@ -28,7 +34,7 @@ from teacher_workspace.auth_limits import consume_auth_budget
 from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.login_throttle import LoginThrottle
-from teacher_workspace.models import AuditLog, User, UserSession
+from teacher_workspace.models import AIJob, AIJobStatus, AIUsageMonth, AuditLog, User, UserSession
 from teacher_workspace.phase1_schemas import AuthUser, LoginRequest, LoginResponse
 
 router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
@@ -225,7 +231,13 @@ async def login(
         samesite="lax",
         path="/",
     )
-    return LoginResponse(user=AuthUser(id=user.id, username=user.username))
+    return LoginResponse(
+        user=AuthUser(
+            id=user.id,
+            username=user.username,
+            deletion_scheduled_for=user.deletion_scheduled_for,
+        )
+    )
 
 
 UserDep = Annotated[User, Depends(require_user)]
@@ -234,7 +246,11 @@ CsrfUserDep = Annotated[User, Depends(require_csrf)]
 
 @router.get("/me", response_model=AuthUser)
 async def me(user: UserDep) -> AuthUser:
-    return AuthUser(id=user.id, username=user.username)
+    return AuthUser(
+        id=user.id,
+        username=user.username,
+        deletion_scheduled_for=user.deletion_scheduled_for,
+    )
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -257,7 +273,10 @@ async def logout(
 
 @router.get("/registration", response_model=RegistrationConfig)
 async def registration_config(settings: SettingsDep) -> RegistrationConfig:
-    return RegistrationConfig(enabled=settings.registration_enabled)
+    return RegistrationConfig(
+        enabled=settings.registration_enabled,
+        support_contact=settings.support_contact,
+    )
 
 
 @router.post("/register", response_model=RegisterResponse, status_code=201)
@@ -293,6 +312,9 @@ async def register(
         password_hash=hashed,
         recovery_code_hash=hash_token(recovery_code),
         ai_access_enabled=False,
+        ai_monthly_job_limit=0,
+        privacy_notice_version=payload.privacy_notice_version,
+        privacy_accepted_at=utc_now(),
     )
     session.add(user)
     try:
@@ -453,6 +475,115 @@ async def list_sessions(context: AuthContextDep, session: SessionDep) -> list[Se
     ]
 
 
+@router.post("/data-export.zip")
+async def export_account_data(
+    request: Request,
+    user: CsrfUserDep,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> Response:
+    exported = await build_account_export(session, user, settings)
+    session.add(
+        AuditLog(
+            actor_user_id=user.id,
+            action="ACCOUNT_DATA_EXPORTED",
+            entity_type="User",
+            entity_id=str(user.id),
+            change_summary={
+                "record_count": exported.record_count,
+                "file_count": exported.file_count,
+            },
+            request_id=getattr(request.state, "request_id", None),
+        )
+    )
+    await session.commit()
+    return Response(
+        content=exported.content,
+        media_type="application/zip",
+        headers={
+            "Cache-Control": "private, no-store",
+            "Content-Disposition": f"attachment; filename*=UTF-8''{quote(exported.filename)}",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.post("/deletion-request", response_model=AccountDeletionStatus)
+async def request_account_deletion(
+    payload: AccountDeletionRequest,
+    request: Request,
+    context: AuthContextDep,
+    user: CsrfUserDep,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> AccountDeletionStatus:
+    if user.deletion_scheduled_for is not None:
+        return AccountDeletionStatus(scheduled_for=user.deletion_scheduled_for)
+    if payload.confirm_username != user.username:
+        raise HTTPException(
+            422,
+            detail={"code": "USERNAME_CONFIRMATION_FAILED", "message": "确认账户名不一致"},
+        )
+    await check_current_password(session, user, payload.current_password)
+    now = utc_now()
+    scheduled = now + timedelta(days=settings.account_deletion_grace_days)
+    user.deletion_requested_at = now
+    user.deletion_scheduled_for = scheduled
+    await session.execute(
+        update(UserSession)
+        .where(
+            UserSession.user_id == user.id,
+            UserSession.id != context.user_session.id,
+            UserSession.revoked_at.is_(None),
+        )
+        .values(revoked_at=now)
+    )
+    await session.execute(
+        update(AIJob)
+        .where(AIJob.owner_user_id == user.id, AIJob.status == AIJobStatus.QUEUED)
+        .values(
+            status=AIJobStatus.CANCELED,
+            error_code="ACCOUNT_DELETION_REQUESTED",
+            error_message="Account deletion canceled this queued task",
+        )
+    )
+    session.add(
+        AuditLog(
+            actor_user_id=user.id,
+            action="ACCOUNT_DELETION_REQUESTED",
+            entity_type="User",
+            entity_id=str(user.id),
+            change_summary={"scheduled_for": scheduled.isoformat()},
+            request_id=getattr(request.state, "request_id", None),
+        )
+    )
+    await session.commit()
+    return AccountDeletionStatus(scheduled_for=scheduled)
+
+
+@router.post("/deletion-cancel", status_code=204)
+async def cancel_account_deletion(
+    request: Request,
+    user: CsrfUserDep,
+    session: SessionDep,
+) -> None:
+    if user.deletion_scheduled_for is None:
+        return
+    user.deletion_requested_at = None
+    user.deletion_scheduled_for = None
+    session.add(
+        AuditLog(
+            actor_user_id=user.id,
+            action="ACCOUNT_DELETION_CANCELED",
+            entity_type="User",
+            entity_id=str(user.id),
+            change_summary={},
+            request_id=getattr(request.state, "request_id", None),
+        )
+    )
+    await session.commit()
+
+
 @router.post("/sessions/revoke-others", status_code=204)
 async def revoke_other_sessions(
     context: AuthContextDep, _: CsrfUserDep, session: SessionDep
@@ -478,8 +609,13 @@ async def revoke_other_sessions(
     await session.commit()
 
 
-async def require_ai_access(user: CsrfUserDep) -> User:
-    if not user.ai_access_enabled:
+async def require_ai_access(user: CsrfUserDep, session: SessionDep) -> User:
+    del session
+    if (
+        user.deletion_scheduled_for is not None
+        or not user.ai_access_enabled
+        or user.ai_monthly_job_limit <= 0
+    ):
         raise HTTPException(
             403,
             detail={
@@ -488,6 +624,48 @@ async def require_ai_access(user: CsrfUserDep) -> User:
             },
         )
     return user
+
+
+async def reserve_ai_usage(user: User, session: AsyncSession) -> None:
+    if (
+        user.deletion_scheduled_for is not None
+        or not user.ai_access_enabled
+        or user.ai_monthly_job_limit <= 0
+    ):
+        raise HTTPException(
+            403,
+            detail={
+                "code": "AI_ACCESS_DISABLED",
+                "message": "此账户的 AI 生成权限尚未开通，可先使用学生、课程与手工记录功能",
+            },
+        )
+    month_key = utc_now().strftime("%Y-%m")
+    insert = sqlite_insert if session.get_bind().dialect.name == "sqlite" else pg_insert
+    statement = insert(AIUsageMonth).values(
+        owner_user_id=user.id,
+        month_key=month_key,
+        job_count=1,
+        input_tokens=0,
+        output_tokens=0,
+        updated_at=utc_now(),
+    )
+    reserved = statement.on_conflict_do_update(
+        index_elements=[AIUsageMonth.owner_user_id, AIUsageMonth.month_key],
+        set_={
+            "job_count": AIUsageMonth.job_count + 1,
+            "updated_at": utc_now(),
+        },
+        where=AIUsageMonth.job_count < user.ai_monthly_job_limit,
+    ).returning(AIUsageMonth.job_count)
+    count = await session.scalar(reserved)
+    if count is None:
+        raise HTTPException(
+            429,
+            detail={
+                "code": "AI_MONTHLY_QUOTA_REACHED",
+                "message": "本月 AI 生成次数已用完，手工记录和编辑仍可继续使用",
+            },
+        )
 
 
 AIUserDep = Annotated[User, Depends(require_ai_access)]

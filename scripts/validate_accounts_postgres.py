@@ -53,7 +53,11 @@ def browser_check(env: dict[str, str]) -> None:
             for process in reversed(processes):
                 if process.poll() is None:
                     if os.name == "nt":
-                        subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True)
+                        subprocess.run(
+                            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                            capture_output=True,
+                            check=False,
+                        )
                     else:
                         process.terminate()
                     process.wait(timeout=15)
@@ -78,7 +82,11 @@ def main() -> None:
         ], env=env, check=True, capture_output=True)
         created = True
         for _ in range(30):
-            result = subprocess.run(["docker", "exec", name, "pg_isready", "-U", "postgres"], capture_output=True)
+            result = subprocess.run(
+                ["docker", "exec", name, "pg_isready", "-U", "postgres"],
+                capture_output=True,
+                check=False,
+            )
             if result.returncode == 0:
                 break
             time.sleep(1)

@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 
 import { EmptyState, ErrorNotice, PageHeader } from "@/components/page-ui";
 import { api, jsonBody } from "@/lib/api";
-import type { AISettings, PromptTemplate } from "@/lib/types";
+import type { AISettings, AIUsage, PromptTemplate } from "@/lib/types";
 
 export default function AISettingsPage() {
   const client = useQueryClient();
@@ -17,6 +17,7 @@ export default function AISettingsPage() {
     queryKey: ["prompt-templates"],
     queryFn: () => api<PromptTemplate[]>("/prompt-templates"),
   });
+  const usage = useQuery({ queryKey: ["ai-usage"], queryFn: () => api<AIUsage>("/ai-usage") });
   const [selectedId, setSelectedId] = useState<string>();
   const selected =
     templates.data?.find((template) => template.id === selectedId) ??
@@ -63,6 +64,16 @@ export default function AISettingsPage() {
             <div><dt className="text-[var(--muted)]">真实图片识别</dt><dd className="mt-1 font-medium">{settings.data.real_vision_provider_configured ? "已配置" : "未启用，不产生费用"}</dd></div>
           </dl>
         ) : null}
+      </section>
+      <section className="card mt-4">
+        <h2 className="font-semibold">我的 AI 使用额度</h2>
+        {usage.data ? (
+          usage.data.access_enabled ? (
+            <p className="mt-3 text-sm leading-7">{usage.data.month} 已使用 <strong>{usage.data.jobs_used}</strong> / {usage.data.monthly_job_limit} 次生成，还可使用 <strong>{usage.data.jobs_remaining}</strong> 次。额度用完后仍可继续手工编辑和记录。</p>
+          ) : (
+            <p className="mt-3 text-sm leading-7 text-[var(--muted)]">当前账户尚未开通 AI 生成额度；学生、课程、资料和所有手工功能不受影响。</p>
+          )
+        ) : <p className="mt-3 text-sm text-[var(--muted)]">正在读取额度…</p>}
       </section>
       <div className="mt-5 grid gap-6 lg:grid-cols-[260px_1fr]">
         <aside className="card h-fit">

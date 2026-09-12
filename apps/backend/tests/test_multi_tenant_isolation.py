@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import os
+import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
@@ -8,17 +10,20 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
+from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
 from pwdlib import PasswordHash
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
+from teacher_workspace.account_deletion import purge_due_accounts
+from teacher_workspace.auth import reserve_ai_usage
 from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.main import app
-from teacher_workspace.models import Base, User
+from teacher_workspace.models import Base, UploadedMaterial, User
 from teacher_workspace.worker import run_once
 
 PASSWORD = "fictional-multi-tenant-password"
@@ -51,11 +56,13 @@ async def tenant_context(
                     username="fictional-owner-a",
                     password_hash=PasswordHash.recommended().hash(PASSWORD),
                     ai_access_enabled=True,
+                    ai_monthly_job_limit=100,
                 ),
                 User(
                     username="fictional-owner-b",
                     password_hash=PasswordHash.recommended().hash(PASSWORD),
                     ai_access_enabled=True,
+                    ai_monthly_job_limit=100,
                 ),
             ]
         )
@@ -409,6 +416,16 @@ async def test_two_active_teachers_cannot_cross_read_write_link_download_or_expo
             if name.endswith(".md")
         )
     assert "A专属" not in exported_text
+    account_export = await owner_b.post("/api/v1/auth/data-export.zip", headers=headers_b)
+    assert account_export.status_code == 200, account_export.text
+    with ZipFile(BytesIO(account_export.content)) as archive:
+        names = archive.namelist()
+        account_json = archive.read("account.json").decode("utf-8")
+        student_json = archive.read("records/students.json").decode("utf-8")
+    assert not any("session" in name or "password" in name for name in names)
+    assert "password" not in account_json and "recovery" not in account_json
+    assert "B专属虚构学生" in student_json
+    assert "A专属" not in student_json
 
     # Failed cross-tenant attempts did not mutate or hide A's original records.
     owner_student = await owner_a.get(f"/api/v1/students/{records['student']['id']}")
@@ -418,3 +435,62 @@ async def test_two_active_teachers_cannot_cross_read_write_link_download_or_expo
     assert (await owner_a.get("/api/v1/payments")).json()[0]["id"] == payment["id"]
     owner_b_mastery = await owner_b.get(f"/api/v1/student-subjects/{link_b['id']}/mastery")
     assert owner_b_mastery.status_code == 200
+
+    # Deletion is delayed, removes only the due tenant and its stored files, and
+    # leaves the other teacher's durable records untouched.
+    async with factory() as session, session.begin():
+        user_a = await session.scalar(select(User).where(User.username == "fictional-owner-a"))
+        stored_material = await session.get(UploadedMaterial, uuid.UUID(material["id"]))
+        assert user_a is not None and stored_material is not None
+        stored_path = settings.local_storage_root / stored_material.object_key
+        assert stored_path.exists()
+        user_a.deletion_requested_at = datetime.now(UTC) - timedelta(days=8)
+        user_a.deletion_scheduled_for = datetime.now(UTC) - timedelta(days=1)
+    assert await purge_due_accounts(factory, settings) == 1
+    assert not stored_path.exists()
+    assert (await owner_a.get("/api/v1/auth/me")).status_code == 401
+    async with factory() as session:
+        assert await session.scalar(
+            select(User.id).where(User.username == "fictional-owner-a")
+        ) is None
+        assert await session.scalar(
+            select(User.id).where(User.username == "fictional-owner-b")
+        ) is not None
+    students_b = await owner_b.get("/api/v1/students")
+    assert students_b.status_code == 200
+    assert "B专属虚构学生" in students_b.text
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(
+    not os.environ.get("MULTITENANT_TEST_DATABASE_URL"),
+    reason="Requires isolated PostgreSQL for real concurrent reservations",
+)
+async def test_monthly_ai_quota_is_atomic_under_postgresql_concurrency(
+    tenant_context: tuple[AsyncClient, AsyncClient, async_sessionmaker[AsyncSession], Settings],
+) -> None:
+    _, _, factory, _ = tenant_context
+    async with factory() as session, session.begin():
+        quota_user = User(
+            username="fictional-quota-concurrency",
+            password_hash="fictional-hash-not-used",
+            ai_access_enabled=True,
+            ai_monthly_job_limit=3,
+        )
+        session.add(quota_user)
+    user_id = quota_user.id
+
+    async def reserve() -> int:
+        async with factory() as session:
+            user = await session.get(User, user_id)
+            assert user is not None
+            try:
+                await reserve_ai_usage(user, session)
+                await session.commit()
+            except HTTPException as error:
+                return error.status_code
+            return 200
+
+    results = await asyncio.gather(*(reserve() for _ in range(10)))
+    assert results.count(200) == 3
+    assert results.count(429) == 7

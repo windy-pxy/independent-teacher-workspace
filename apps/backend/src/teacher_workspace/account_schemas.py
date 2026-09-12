@@ -1,16 +1,19 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
 Password = Annotated[str, Field(min_length=12, max_length=200)]
+CURRENT_PRIVACY_NOTICE_VERSION = "2026-09-11"
 
 
 class RegisterRequest(BaseModel):
     username: str = Field(pattern=r"^[a-z][a-z0-9_-]{2,39}$")
     password: Password
     password_confirmation: Password
+    privacy_notice_accepted: Literal[True]
+    privacy_notice_version: Literal["2026-09-11"]
 
     @model_validator(mode="after")
     def matching_passwords(self) -> "RegisterRequest":
@@ -38,6 +41,14 @@ class ConfirmPasswordRequest(BaseModel):
     current_password: str = Field(min_length=1, max_length=200)
 
 
+class AccountDeletionRequest(ConfirmPasswordRequest):
+    confirm_username: str = Field(min_length=1, max_length=100)
+
+
+class AccountDeletionStatus(BaseModel):
+    scheduled_for: datetime
+
+
 class ResetPasswordRequest(BaseModel):
     username: str = Field(min_length=1, max_length=100)
     recovery_code: str = Field(min_length=20, max_length=128)
@@ -53,3 +64,5 @@ class SessionResponse(BaseModel):
 
 class RegistrationConfig(BaseModel):
     enabled: bool
+    privacy_notice_version: str = CURRENT_PRIVACY_NOTICE_VERSION
+    support_contact: str | None = None

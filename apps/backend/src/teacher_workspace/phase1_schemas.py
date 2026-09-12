@@ -18,6 +18,7 @@ class LoginRequest(BaseModel):
 class AuthUser(BaseModel):
     id: UUID
     username: str
+    deletion_scheduled_for: datetime | None = None
 
 
 class LoginResponse(BaseModel):

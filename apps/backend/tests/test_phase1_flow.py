@@ -27,6 +27,8 @@ async def phase1_context() -> AsyncIterator[tuple[AsyncClient, async_sessionmake
             User(
                 username="demo-teacher",
                 password_hash=PasswordHash.recommended().hash("fictional-password"),
+                ai_access_enabled=True,
+                ai_monthly_job_limit=100,
             )
         )
 

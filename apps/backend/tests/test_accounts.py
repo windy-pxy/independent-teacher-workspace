@@ -1,6 +1,9 @@
 import asyncio
+import json
 import os
 from collections.abc import AsyncIterator
+from io import BytesIO
+from zipfile import ZipFile
 
 import pytest
 from fastapi import HTTPException
@@ -14,10 +17,11 @@ from teacher_workspace.auth_limits import consume_auth_budget
 from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import get_session
 from teacher_workspace.main import app
-from teacher_workspace.models import AuditLog, Base, User
+from teacher_workspace.models import AIJob, AIJobStatus, AuditLog, Base, User
 
 ORIGIN = {"Origin": "http://test"}
 PASSWORD = "fictional-strong-password"
+PRIVACY = {"privacy_notice_accepted": True, "privacy_notice_version": "2026-09-11"}
 
 
 @pytest.fixture
@@ -67,6 +71,7 @@ async def register(client: AsyncClient, username: str = "fictional-teacher") -> 
             "username": username,
             "password": PASSWORD,
             "password_confirmation": PASSWORD,
+            **PRIVACY,
         },
     )
     assert response.status_code == 201, response.text
@@ -97,6 +102,8 @@ async def test_registration_hashes_secrets_and_preserves_independent_users(accou
         user = next(user for user in users if user.username == "fictional-teacher")
         assert user.password_hash.startswith("$argon2id$")
         assert user.recovery_code_hash == hash_token(code)
+        assert user.privacy_notice_version == "2026-09-11"
+        assert user.privacy_accepted_at is not None
         assert not user.ai_access_enabled
         audits = list(await session.scalars(select(AuditLog)))
         assert all(PASSWORD not in str(row.change_summary) for row in audits)
@@ -108,11 +115,16 @@ async def test_registration_hashes_secrets_and_preserves_independent_users(accou
             "username": "fictional-teacher",
             "password": PASSWORD,
             "password_confirmation": PASSWORD,
+            **PRIVACY,
         },
     )
     assert response.status_code == 409
     settings.registration_enabled = False
-    assert (await client.get("/api/v1/auth/registration")).json() == {"enabled": False}
+    assert (await client.get("/api/v1/auth/registration")).json() == {
+        "enabled": False,
+        "privacy_notice_version": "2026-09-11",
+        "support_contact": None,
+    }
     response = await client.post(
         "/api/v1/auth/register",
         headers=ORIGIN,
@@ -120,6 +132,7 @@ async def test_registration_hashes_secrets_and_preserves_independent_users(accou
             "username": "fictional-third",
             "password": PASSWORD,
             "password_confirmation": PASSWORD,
+            **PRIVACY,
         },
     )
     assert response.status_code == 403
@@ -135,6 +148,7 @@ async def test_invalid_registration_never_echoes_password(accounts):
             "username": "fictional-teacher",
             "password": PASSWORD,
             "password_confirmation": "mismatch",
+            **PRIVACY,
         },
     )
     assert response.status_code == 422
@@ -146,9 +160,24 @@ async def test_invalid_registration_never_echoes_password(accounts):
             "username": "fictional-teacher",
             "password": PASSWORD,
             "password_confirmation": PASSWORD,
+            **PRIVACY,
         },
     )
     assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_registration_requires_current_privacy_notice_acceptance(accounts):
+    client, _, _ = accounts
+    payload = {
+        "username": "fictional-privacy",
+        "password": PASSWORD,
+        "password_confirmation": PASSWORD,
+        "privacy_notice_accepted": False,
+        "privacy_notice_version": "2026-09-11",
+    }
+    response = await client.post("/api/v1/auth/register", headers=ORIGIN, json=payload)
+    assert response.status_code == 422
 
 
 @pytest.mark.asyncio
@@ -219,6 +248,7 @@ async def test_revoke_others_and_registration_budget(accounts):
             "username": "fictional-next",
             "password": PASSWORD,
             "password_confirmation": PASSWORD,
+            **PRIVACY,
         },
     )
     assert response.status_code == 429 and "retry-after" in response.headers
@@ -231,6 +261,64 @@ async def test_revoke_others_and_registration_budget(accounts):
         ).status_code == 204
         assert (await client.get("/api/v1/auth/me")).status_code == 200
         assert (await second.get("/api/v1/auth/me")).status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_account_export_and_reversible_deletion_request(accounts):
+    client, factory, _ = accounts
+    await register(client)
+    headers = await login(client)
+    student = await client.post(
+        "/api/v1/students", headers=headers, json={"display_name": "虚构导出学生"}
+    )
+    assert student.status_code == 201
+
+    exported = await client.post("/api/v1/auth/data-export.zip", headers=headers)
+    assert exported.status_code == 200
+    assert exported.headers["content-type"] == "application/zip"
+    with ZipFile(BytesIO(exported.content)) as archive:
+        account = json.loads(archive.read("account.json"))
+        students = json.loads(archive.read("records/students.json"))
+        assert account["username"] == "fictional-teacher"
+        assert "password_hash" not in account and "recovery_code_hash" not in account
+        assert [row["display_name"] for row in students] == ["虚构导出学生"]
+
+    async with factory() as session, session.begin():
+        owner = await session.scalar(select(User).where(User.username == "fictional-teacher"))
+        assert owner is not None
+        queued_job = AIJob(owner_user_id=owner.id, task_type="mock.success")
+        session.add(queued_job)
+        await session.flush()
+        queued_job_id = queued_job.id
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as second:
+        await login(second)
+        rejected = await client.post(
+            "/api/v1/auth/deletion-request",
+            headers=headers,
+            json={"current_password": PASSWORD, "confirm_username": "wrong-name"},
+        )
+        assert rejected.status_code == 422
+        requested = await client.post(
+            "/api/v1/auth/deletion-request",
+            headers=headers,
+            json={
+                "current_password": PASSWORD,
+                "confirm_username": "fictional-teacher",
+            },
+        )
+        assert requested.status_code == 200
+        assert requested.json()["scheduled_for"]
+        async with factory() as session:
+            canceled_job = await session.get(AIJob, queued_job_id)
+            assert canceled_job is not None
+            assert canceled_job.status == AIJobStatus.CANCELED
+        assert (await second.get("/api/v1/auth/me")).status_code == 401
+        assert (await client.get("/api/v1/auth/me")).json()["deletion_scheduled_for"]
+        assert (
+            await client.post("/api/v1/auth/deletion-cancel", headers=headers)
+        ).status_code == 204
+        assert (await client.get("/api/v1/auth/me")).json()["deletion_scheduled_for"] is None
 
 
 @pytest.mark.asyncio
@@ -254,6 +342,7 @@ async def test_concurrent_duplicate_registration_is_atomic(accounts):
         "username": "fictional-race",
         "password": PASSWORD,
         "password_confirmation": PASSWORD,
+        **PRIVACY,
     }
     replies = await asyncio.gather(
         *[client.post("/api/v1/auth/register", headers=ORIGIN, json=payload) for _ in range(2)]

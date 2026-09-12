@@ -1,19 +1,21 @@
 import asyncio
 import logging
+import time
 from collections.abc import Awaitable, Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from teacher_workspace.account_deletion import purge_due_accounts
 from teacher_workspace.config import Settings, get_settings
 from teacher_workspace.db import dispose_engine, get_session_factory
-from teacher_workspace.models import AIJob
+from teacher_workspace.models import AIJob, User
 from teacher_workspace.phase2_service import execute_lesson_plan_job
 from teacher_workspace.phase3_service import execute_feedback_job
 from teacher_workspace.phase4_service import (
     execute_question_set_job,
     execute_wrong_question_recognition_job,
 )
-from teacher_workspace.queue import claim_next_job, complete_job, fail_job
+from teacher_workspace.queue import cancel_job, claim_next_job, complete_job, fail_job
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +54,21 @@ async def run_once(
         job = await session.get(AIJob, job_id)
         if job is None:
             return False
+        if job.owner_user_id is not None:
+            owner = await session.get(User, job.owner_user_id)
+            if (
+                owner is None
+                or not owner.is_active
+                or not owner.ai_access_enabled
+                or owner.deletion_scheduled_for is not None
+            ):
+                await cancel_job(
+                    session_factory,
+                    job_id,
+                    "AI_ACCESS_REVOKED",
+                    "AI access was revoked before this task started",
+                )
+                return True
         try:
             output = (
                 await executor(job)
@@ -75,8 +92,15 @@ async def run_forever() -> None:
     settings = get_settings()
     logging.basicConfig(level=settings.log_level)
     session_factory = get_session_factory()
+    last_purge_check = 0.0
     try:
         while True:
+            if time.monotonic() - last_purge_check >= 3600:
+                try:
+                    await purge_due_accounts(session_factory, settings)
+                except Exception:
+                    logger.exception("Scheduled account purge check failed")
+                last_purge_check = time.monotonic()
             handled = await run_once(session_factory, settings)
             if not handled:
                 await asyncio.sleep(settings.worker_poll_seconds)

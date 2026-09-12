@@ -39,6 +39,7 @@ teacher-worker = "teacher_workspace.worker:main"
 teacher-production-check = "teacher_workspace.production_check:main"
 teacher-security-check = "teacher_workspace.security_check:main"
 teacher-performance-smoke = "teacher_workspace.performance_smoke:main"
+teacher-manage-users = "teacher_workspace.manage_users:main"
 
 [build-system]
 requires = ["hatchling>=1.27"]

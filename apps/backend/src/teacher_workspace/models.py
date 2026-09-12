@@ -107,12 +107,23 @@ class QuestionSetVersionSource(StrEnum):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint(
+            "ai_monthly_job_limit >= 0",
+            name="ck_users_ai_monthly_job_limit_nonnegative",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     username: Mapped[str] = mapped_column(String(100), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     recovery_code_hash: Mapped[str | None] = mapped_column(String(64))
-    ai_access_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default="false")
+    privacy_notice_version: Mapped[str | None] = mapped_column(String(20))
+    privacy_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deletion_scheduled_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ai_access_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    ai_monthly_job_limit: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(
@@ -126,6 +137,26 @@ class AuthRateLimit(Base):
     key_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
     window_start: Mapped[int] = mapped_column(BigInteger)
     attempts: Mapped[int] = mapped_column(Integer)
+
+
+class AIUsageMonth(Base):
+    __tablename__ = "ai_usage_months"
+    __table_args__ = (
+        CheckConstraint("job_count >= 0", name="ck_ai_usage_job_count_nonnegative"),
+        CheckConstraint("input_tokens >= 0", name="ck_ai_usage_input_tokens_nonnegative"),
+        CheckConstraint("output_tokens >= 0", name="ck_ai_usage_output_tokens_nonnegative"),
+    )
+
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    month_key: Mapped[str] = mapped_column(String(7), primary_key=True)
+    job_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    input_tokens: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
+    output_tokens: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
 
 
 class UserSession(Base):

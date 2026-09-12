@@ -28,6 +28,7 @@ async function main() {
     await page.getByLabel(/账户名/).fill("fictional-browser-a");
     await page.getByLabel(/^密码/).fill(password);
     await page.getByLabel("再次输入密码").fill("fictional-incorrect-confirmation");
+    await page.getByRole("checkbox", { name: /隐私说明/ }).check();
     await page.getByRole("button", { name: "注册教师账户" }).click();
     await expect(page.getByRole("alert").filter({ hasText: "两次密码不一致" })).toBeVisible();
     await page.getByLabel("再次输入密码").fill(password);

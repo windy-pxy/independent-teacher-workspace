@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     app_timezone: str = "Asia/Shanghai"
     app_currency: str = "CNY"
     app_domain: str = "teacher.example.invalid"
+    support_contact: str | None = None
     log_level: str = "INFO"
     database_url: str = (
         "postgresql+asyncpg://teacher_workspace:change-me-local-only@localhost:5432/"
@@ -44,6 +45,7 @@ class Settings(BaseSettings):
     registration_enabled: bool = False
     registration_limit_per_hour: int = Field(default=10, ge=1, le=1000)
     auth_global_limit_per_minute: int = Field(default=120, ge=10, le=10000)
+    account_deletion_grace_days: int = Field(default=7, ge=1, le=30)
     storage_backend: Literal["local", "supabase"] = "local"
     local_storage_root: Path = Path("var/storage")
     supabase_url: str | None = None
@@ -150,6 +152,14 @@ class Settings(BaseSettings):
         ):
             raise ValueError(
                 "Supabase storage requires HTTPS SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
+            )
+        if self.registration_enabled and (
+            not self.support_contact
+            or len(self.support_contact.strip()) < 5
+            or "example" in self.support_contact.casefold()
+        ):
+            raise ValueError(
+                "Public registration requires a real SUPPORT_CONTACT for privacy requests"
             )
         return self
 
