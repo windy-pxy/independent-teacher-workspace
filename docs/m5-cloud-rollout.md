@@ -23,6 +23,8 @@
 4. 使用 GitHub 私有仓库的只读 deploy key 克隆到 `/opt/teacher-workspace/app`；不要把个人访问令牌写进远程 URL。
 5. 在项目根创建权限为 `600` 的 `.env`。至少填写真实域名、真实支持联系方式、两个独立强随机密钥，并保持邀请码模式。当前 Compose 会把 `POSTGRES_PASSWORD` 放入数据库 URL，因此该密码只能使用 URL 安全字符；推荐直接使用小写十六进制，不要使用包含 `/`、`+`、`=`、`@` 或 `:` 的 Base64/普通密码：
 
+资源受限的临时试运行机可先建立 Swap，并在本机或 CI 构建应用镜像后通过加密通道传输，避免在 1 GiB 服务器上执行 Next.js 构建。Swap 只能缓解瞬时内存压力，不能代替升配；必须依据容器内存、可用内存、Swap、磁盘和响应时间决定扩容。前端 Dockerfile 使用多阶段构建，只把 Next.js standalone 产物放入运行镜像。
+
 ```bash
 openssl rand -hex 48  # 用作 SESSION_SECRET，输出 96 位
 openssl rand -hex 32  # 用作 POSTGRES_PASSWORD，输出 64 位
@@ -145,6 +147,7 @@ pnpm production:verify-public -- https://你的域名 --expect-registration invi
 - 本地镜像构建及保留卷升级成功；迁移为 `20260912_0010`，Web/API 均返回 200，四个长期服务正常，升级前后关键业务数量一致。
 - 使用隔离 Compose 项目和虚构域名 `teacher.localhost` 完成生产模式启动演练：迁移到 `20260912_0010`、生产配置检查、Caddy HTTPS 反向代理、Web/API 健康检查和安全响应头均通过。由于使用本地 CA 和虚构域名，这不替代真实证书、公网 DNS 或跨网络验收。
 - 加固后再次以隔离生产栈验证：Web/API/Worker/Caddy 均为只读根文件系统、移除默认 capabilities、禁止权限提升并限制进程数；根文件系统写入被拒绝，`/tmp` 与对象存储卷仍可正常写入，HTTPS 和迁移保持通过。
+- Web 多阶段镜像在本机重新构建并真实启动，运行镜像由约 1.72 GB 降至约 383 MB，HTTP 返回 200；该优化不改变应用路由或业务代码。
 
 这些证据只证明本地预部署包可用，不替代真实域名、HTTPS、云端恢复、服务器重启及跨网络试用。
 
